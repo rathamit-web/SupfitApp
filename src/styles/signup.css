@@ -1,0 +1,175 @@
+/* signup.css */
+.signup-container {
+  /* Liquid glass effect */
+  background: #fdfdfd rgb(253, 253, 253);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.08),
+    0 8px 10px -6px rgba(0, 0, 0, 0.06);
+  padding: 1rem; /* even tighter to reduce whitespace */
+  max-width: 360px; /* closer to mobile card width */
+  margin: 0 auto;
+}
+.signup-logo {
+  display: block;
+  margin: 0 auto 0.75rem auto; /* trim extra space below logo */
+  max-width: 120px;
+  height: auto;
+}
+.signup-title {
+  color: #ff3c20;
+  font-size: 1.5rem; /* more compact for mobile */
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+.signup-subtitle {
+  color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 0.9rem;
+}
+.signup-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem; /* slightly tighter */
+  border-radius: 0.75rem;
+  /* Orange glass finish */
+  border: 1px solid rgba(255, 60, 32, 0.35);
+  background:
+    linear-gradient(0deg, rgba(255, 60, 32, 0.1), rgba(255, 60, 32, 0.1)), rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px) saturate(160%);
+  -webkit-backdrop-filter: blur(8px) saturate(160%);
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  color: #0f172a; /* slate-900 for strong legibility */
+}
+
+/* Improve placeholder and label legibility */
+.signup-input::placeholder {
+  color: #6b7280; /* gray-500 */
+  opacity: 1;
+}
+
+.signup-container label {
+  color: #374151; /* gray-700 */
+}
+.signup-btn {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  background: #ff3c20;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  border: none;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+.signup-btn:hover {
+  background: #e2361d;
+}
+.signup-divider {
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
+}
+.signup-divider span {
+  color: #bbb;
+  font-size: 0.9rem;
+  margin: 0 1rem;
+}
+.signup-divider::before,
+.signup-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #eee;
+}
+.signup-social-btn {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.7);
+  color: #333;
+  font-size: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.signup-social-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* Apple-like liquid glass segmented toggle */
+.signup-toggle {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 0;
+  padding: 4px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(243, 244, 246, 0.7); /* gray-100 glass */
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  width: 320px; /* short length */
+  margin: 0 auto 1rem; /* centered */
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.signup-toggle-thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  height: calc(100% - 8px);
+  width: calc(50% - 8px);
+  border-radius: 9999px;
+  z-index: 0;
+  /* Orange liquid glass (bright, matching Supfit logo) */
+  background: linear-gradient(180deg, rgba(255, 60, 32, 0.65), rgba(255, 60, 32, 0.42));
+  border: 1px solid rgba(255, 60, 32, 0.65);
+  box-shadow:
+    0 10px 24px rgba(255, 60, 32, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  transition: transform 220ms ease;
+  transform: translateX(0);
+}
+
+.signup-toggle-thumb.right {
+  transform: translateX(100%);
+}
+
+.signup-toggle-btn {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.875rem; /* text-sm */
+  color: #4b5563; /* gray-600 */
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: color 200ms ease;
+}
+
+.signup-toggle-btn.active {
+  color: #ffffff;
+  text-shadow:
+    0 1px 2px rgba(255, 60, 32, 0.5),
+    0 1px 1px rgba(0, 0, 0, 0.08);
+}
+
+/* Duplicate toggle styles removed to avoid conflicts */
