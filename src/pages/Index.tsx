@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,14 +20,12 @@ import {
   CreditCard,
   Check,
   UtensilsCrossed,
-  Settings,
   Edit3,
   Edit2,
   Home,
   LayoutDashboard,
   User,
 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +36,18 @@ import {
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
 
+
+
+
 const Index = () => {
+  // Coach Note for display
+  const [coachNote, setCoachNote] = useState<string>(() => localStorage.getItem('coachNote') || '');
+  useEffect(() => {
+    const handleStorage = () => setCoachNote(localStorage.getItem('coachNote') || '');
+    window.addEventListener('focus', handleStorage);
+    return () => window.removeEventListener('focus', handleStorage);
+  }, []);
+
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<'today' | 'week'>('today');
   const [profileImage, setProfileImage] = useState<string>(() => {
@@ -314,10 +324,11 @@ const Index = () => {
     <main
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(to bottom right, #f5f5f7, #ffffff)',
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #f5f5f7 100%)',
         fontFamily:
-          '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif',
+          '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Roboto", "Google Sans", "Helvetica Neue", Arial, sans-serif',
         paddingBottom: '80px',
+        letterSpacing: '-0.24px',
       }}
     >
       {/* Hero Profile Section */}
@@ -447,22 +458,27 @@ const Index = () => {
               <div>
                 <h1
                   style={{
-                    fontSize: 'clamp(28px, 5vw, 48px)',
-                    fontWeight: '700',
-                    letterSpacing: '-1px',
+                    fontSize: 'clamp(32px, 6vw, 52px)',
+                    fontWeight: '800',
+                    letterSpacing: '-1.2px',
                     color: '#1d1d1f',
                     marginBottom: '8px',
                     lineHeight: '1.1',
+                    background: 'linear-gradient(135deg, #1d1d1f 0%, #ff3c20 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
                   }}
                 >
                   Fitness Titan
                 </h1>
                 <p
                   style={{
-                    fontSize: 'clamp(14px, 2vw, 17px)',
+                    fontSize: 'clamp(15px, 2.2vw, 18px)',
                     color: '#6e6e73',
-                    fontWeight: '400',
-                    lineHeight: '1.4',
+                    fontWeight: '500',
+                    lineHeight: '1.5',
+                    letterSpacing: '-0.2px',
                   }}
                 >
                   Athlete • Fitness Coach • Marathon Runner
@@ -486,36 +502,59 @@ const Index = () => {
                 <div
                   key={stat.label}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.7)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(0, 0, 0, 0.08)',
-                    borderRadius: '16px',
-                    padding: '20px',
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    border: '1px solid rgba(0, 0, 0, 0.06)',
+                    borderRadius: '18px',
+                    padding: '22px',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+                    gap: '10px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.04)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 12px 48px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.04)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.04)';
                   }}
                 >
-                  <Icon style={{ width: '24px', height: '24px', color: '#ff3c20' }} />
+                  <div
+                    style={{
+                      padding: '12px',
+                      borderRadius: '14px',
+                      background: 'linear-gradient(135deg, rgba(255, 60, 32, 0.12), rgba(255, 60, 32, 0.06))',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Icon style={{ width: '24px', height: '24px', color: '#ff3c20', strokeWidth: 2.5 }} />
+                  </div>
                   <p
                     style={{
-                      fontSize: '32px',
+                      fontSize: '34px',
                       fontWeight: '700',
                       color: '#1d1d1f',
                       display: 'flex',
                       alignItems: 'baseline',
                       gap: '4px',
+                      letterSpacing: '-0.5px',
+                      marginBottom: '0',
                     }}
                   >
                     {stat.value}
                     {stat.unit && (
-                      <span style={{ fontSize: '15px', color: '#6e6e73' }}>{stat.unit}</span>
+                      <span style={{ fontSize: '16px', color: '#6e6e73', fontWeight: '500' }}>{stat.unit}</span>
                     )}
                   </p>
-                  <p style={{ fontSize: '13px', color: '#6e6e73', fontWeight: '500' }}>
+                  <p style={{ fontSize: '14px', color: '#6e6e73', fontWeight: '500', letterSpacing: '-0.2px', marginTop: '2px' }}>
                     {stat.label}
                   </p>
                 </div>
@@ -524,6 +563,27 @@ const Index = () => {
           </div>
         </div>
       </header>
+
+      {/* Coach Note Display */}
+      {coachNote && (
+        <section
+          style={{
+            margin: '0 auto 32px',
+            maxWidth: '700px',
+            background: 'linear-gradient(135deg, #fff7f5 60%, #fff)',
+            borderRadius: '18px',
+            boxShadow: '0 2px 12px rgba(255,60,32,0.07)',
+            border: '1px solid #ffe5e0',
+            padding: '28px 32px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <h3 style={{ color: '#ff3c20', fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>Coach's Note</h3>
+          <div style={{ color: '#1d1d1f', fontSize: '16px', fontStyle: 'italic' }}>{coachNote}</div>
+        </section>
+      )}
 
       {/* Main Content Grid */}
       <div
@@ -547,8 +607,9 @@ const Index = () => {
                 style={{
                   fontSize: '28px',
                   fontWeight: '700',
-                  letterSpacing: '-0.5px',
+                  letterSpacing: '-0.6px',
                   color: '#1d1d1f',
+                  marginTop: '8px',
                 }}
               >
                 Recent Workouts
@@ -578,15 +639,24 @@ const Index = () => {
                 <div
                   key={post.id}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.7)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(0, 0, 0, 0.08)',
-                    borderRadius: '20px',
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    border: '1px solid rgba(0, 0, 0, 0.06)',
+                    borderRadius: '22px',
                     overflow: 'hidden',
-                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.04)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     display: 'flex',
                     flexDirection: 'column',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 12px 48px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.04)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.04)';
                   }}
                 >
                   <div style={{ position: 'relative' }}>
@@ -604,18 +674,38 @@ const Index = () => {
                         }
                       }}
                     />
-                    <img
-                      src={post.image}
-                      alt={post.caption}
+                    <button
                       style={{
+                        padding: 0,
+                        border: 'none',
+                        background: 'none',
                         width: '100%',
                         height: '240px',
-                        objectFit: 'cover',
-                        objectPosition: 'center',
                         cursor: 'pointer',
+                        display: 'block',
                       }}
                       onClick={() => workoutFileInputRefs.current[post.id]?.click()}
-                    />
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          workoutFileInputRefs.current[post.id]?.click();
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-label="Change workout image"
+                    >
+                      <img
+                        src={post.image}
+                        alt={post.caption}
+                        style={{
+                          width: '100%',
+                          height: '240px',
+                          objectFit: 'cover',
+                          objectPosition: 'center',
+                          display: 'block',
+                        }}
+                        draggable={false}
+                      />
+                    </button>
                     {/* Edit Image Button */}
                     <button
                       onClick={(e) => {
@@ -1028,7 +1118,7 @@ const Index = () => {
                           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                         }}
                       >
-                        <Icon style={{ width: '24px', height: '24px', color: '#ffffff' }} />
+                        <Icon style={{ width: '18px', height: '18px', color: '#ffffff' }} />
                       </div>
                       <div>
                         <p style={{ fontSize: '13px', color: '#6e6e73', fontWeight: '500' }}>
@@ -1114,22 +1204,45 @@ const Index = () => {
                       )}
                     </div>
                     {sub.status === 'paid' ? (
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '8px 16px',
-                          borderRadius: '10px',
-                          background: 'rgba(52, 199, 89, 0.1)',
-                          border: '1px solid rgba(52, 199, 89, 0.3)',
-                          alignSelf: 'flex-start',
-                        }}
-                      >
-                        <Check style={{ width: '16px', height: '16px', color: '#34c759' }} />
-                        <span style={{ fontSize: '14px', fontWeight: '600', color: '#34c759' }}>
-                          Paid
-                        </span>
+                      <div style={{ display: 'flex', flexDirection: 'row', gap: '12px', alignItems: 'center' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '8px 16px',
+                            borderRadius: '10px',
+                            background: 'rgba(52, 199, 89, 0.1)',
+                            border: '1px solid rgba(52, 199, 89, 0.3)',
+                            alignSelf: 'flex-start',
+                          }}
+                        >
+                          <Check style={{ width: '16px', height: '16px', color: '#34c759' }} />
+                          <span style={{ fontSize: '14px', fontWeight: '600', color: '#34c759' }}>
+                            Paid
+                          </span>
+                        </div>
+                        {/* Feedback Button for paid subscriptions */}
+                        <Button
+                          onClick={() => navigate('/feedback')}
+                          style={{
+                            background: '#ff3c20',
+                            color: '#fff',
+                            fontWeight: 600,
+                            fontSize: '14px',
+                            padding: '10px 20px',
+                            borderRadius: '10px',
+                            border: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 8px rgba(255, 60, 32, 0.3)',
+                          }}
+                        >
+                          <MessageCircle style={{ width: '16px', height: '16px' }} />
+                          Feedback
+                        </Button>
                       </div>
                     ) : (
                       <Button
@@ -1729,13 +1842,13 @@ const Index = () => {
           { icon: Dumbbell, path: '/plan' },
           { icon: LayoutDashboard, path: '/coach-home' },
           { icon: User, path: '/settings' },
-        ].map((item, index) => {
-          const navigate = window.location.pathname;
-          const isActive = navigate === item.path;
+        ].map((item) => {
+          const currentPath = globalThis.location.pathname;
+          const isActive = currentPath === item.path;
           return (
             <button
-              key={index}
-              onClick={() => (window.location.href = item.path)}
+              key={item.path}
+              onClick={() => { globalThis.location.href = item.path; }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1757,7 +1870,7 @@ const Index = () => {
                 e.currentTarget.style.background = 'transparent';
               }}
             >
-              <item.icon style={{ width: '24px', height: '24px', strokeWidth: 1.5 }} />
+              <item.icon style={{ width: '18px', height: '18px', strokeWidth: 1.5 }} />
             </button>
           );
         })}

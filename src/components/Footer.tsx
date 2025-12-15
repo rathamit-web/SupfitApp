@@ -1,4 +1,4 @@
-import { Home, Calendar, LayoutDashboard, User } from 'lucide-react';
+import { Home, Calendar, LayoutDashboard, User, MessageCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Custom Revenue Icon with green bars and white arrow
@@ -50,16 +50,17 @@ const Footer = () => {
   ];
 
   const coachNavItems = [
-    { icon: Home, path: '/coach', isCustom: false },
+    { icon: Home, path: '/coach-home', isCustom: false },
     { icon: null, path: '/revenue', isCustom: true },
     { icon: Calendar, path: '/plan', isCustom: false },
     { icon: User, path: '/settings', isCustom: false },
+    { icon: MessageCircle, path: '/testimonials', isCustom: false },
   ];
 
   const navItems = isCoachPage ? coachNavItems : userNavItems;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
+    <div className="fixed bottom-0 left-0 right-0 z-50 pb-safe" style={{ background: 'rgba(255,0,0,0.2)' }}>
       <div className="mx-4 mb-4 rounded-[28px] px-4 py-3 bg-white/40 dark:bg-black/30 backdrop-blur-2xl border border-white/50 dark:border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.6)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)]">
         <div className="flex items-center justify-around max-w-xs mx-auto">
           {navItems.map((item) => {

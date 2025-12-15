@@ -1,3 +1,18 @@
+// Demo testimonials for each coach (could be fetched from API in real app)
+const coachTestimonials: { [coachId: number]: { name: string; text: string }[] } = {
+  1: [
+    { name: 'Amit S.', text: 'John helped me gain strength and confidence. His plans are easy to follow and effective!' },
+    { name: 'Priya R.', text: 'I lost 10kg in 3 months with John’s guidance. Highly recommended!' },
+  ],
+  2: [
+    { name: 'Megha T.', text: 'Sarah’s yoga sessions brought peace and flexibility to my life.' },
+    { name: 'Rohit K.', text: 'Her meditation techniques are life-changing.' },
+  ],
+  3: [
+    { name: 'Suresh P.', text: 'Rajesh is the best for weight loss. I feel healthier and more energetic.' },
+    { name: 'Anjali M.', text: 'His cardio routines are fun and effective!' },
+  ],
+};
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -597,6 +612,30 @@ const SelectCoach = () => {
                     >
                       {coach.bio}
                     </p>
+
+                    {/* Testimonial Section */}
+                    {coachTestimonials[coach.id] && (
+                      <div
+                        style={{
+                          background: 'rgba(255, 60, 32, 0.06)',
+                          border: '1px solid #ffe5e0',
+                          borderRadius: '12px',
+                          padding: '14px 18px',
+                          marginBottom: '10px',
+                          marginTop: '-4px',
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, color: '#ff3c20', fontSize: '13px', marginBottom: 6 }}>
+                          Testimonials
+                        </div>
+                        {coachTestimonials[coach.id].map((t, idx) => (
+                          <div key={idx} style={{ marginBottom: idx < coachTestimonials[coach.id].length - 1 ? 8 : 0 }}>
+                            <span style={{ fontWeight: 600, color: '#1d1d1f', fontSize: '13px' }}>{t.name}:</span>
+                            <span style={{ color: '#6e6e73', fontSize: '13px', marginLeft: 6 }}>{t.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     <div
                       style={{

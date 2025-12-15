@@ -1,4 +1,4 @@
-import ThemeToggle from '@/components/ThemeToggle';
+// import ThemeToggle from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
@@ -9,7 +9,7 @@ const Navbar = () => {
           Supfit
         </Link>
         <div className="flex items-center gap-2">
-          <ThemeToggle />
+          {/* ThemeToggle removed as per branding update */}
         </div>
       </div>
     </nav>

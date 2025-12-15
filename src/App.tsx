@@ -14,12 +14,14 @@ import CreateProfile from './pages/CreateProfile';
 import CoachHome from './pages/CoachHome';
 import ClientDetail from './pages/ClientDetail';
 import RevenueTracker from './pages/RevenueTracker';
+import Testimonials from './pages/Testimonials';
 import NotFound from './pages/NotFound';
 import Navbar from '@/components/Navbar';
 import FollowersPage from './pages/Followers';
 import SelectGym from './pages/SelectGym';
 import SelectCoach from './pages/SelectCoach';
 import SelectDietician from './pages/SelectDietician';
+import Feedback from './pages/Feedback';
 
 const App = () => (
   <ThemeProvider defaultTheme="system" enableSystem>
@@ -36,13 +38,15 @@ const App = () => (
           <Route path="/settings" element={<UserSettings />} />
           <Route path="/targets" element={<MyTargets />} />
           <Route path="/plan" element={<Plan />} />
-          <Route path="/coach" element={<CoachHome />} />
+          <Route path="/coach-home" element={<CoachHome />} />
           <Route path="/client/:id" element={<ClientDetail />} />
           <Route path="/revenue" element={<RevenueTracker />} />
           <Route path="/followers" element={<FollowersPage />} />
           <Route path="/select-gym" element={<SelectGym />} />
           <Route path="/select-coach" element={<SelectCoach />} />
           <Route path="/select-dietician" element={<SelectDietician />} />
+          <Route path="/feedback" element={<Feedback />} />
+          <Route path="/testimonials" element={<Testimonials />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

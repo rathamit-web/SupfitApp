@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import supfitLogo from '@/assets/supfit-logo.png';
+import { colors, typography, spacing, shadows, borderRadius, transitions } from '@/lib/designSystem';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -12,6 +13,13 @@ const Auth = () => {
     const roleFromUrl = searchParams.get('role');
     if (roleFromUrl) {
       setUserRole(roleFromUrl);
+      localStorage.setItem('userRole', roleFromUrl);
+    } else {
+      // fallback to localStorage if no role in URL
+      const roleFromStorage = localStorage.getItem('userRole');
+      if (roleFromStorage) {
+        setUserRole(roleFromStorage);
+      }
     }
   }, [searchParams]);
   const isSignup = !isLogin;
@@ -25,7 +33,13 @@ const Auth = () => {
     e.preventDefault();
     // Navigate to profile creation after signup
     if (isLogin) {
-      navigate('/');
+      if (userRole === 'coach' || userRole === 'dietician') {
+        localStorage.setItem('userRole', userRole);
+        navigate('/coach-home');
+      } else {
+        localStorage.setItem('userRole', userRole || 'individual');
+        navigate('/home');
+      }
     } else {
       const roleParam = userRole ? `?role=${userRole}` : '';
       navigate(`/create-profile${roleParam}`);
@@ -39,23 +53,117 @@ const Auth = () => {
   };
 
   return (
-    <div className="w-full flex justify-center px-4 py-6 sm:py-8">
-      <div className="signup-container">
+    <div
+      className="w-full flex justify-center px-4 py-6 sm:py-8"
+      style={{
+        background: 'linear-gradient(135deg, #f8f9fa 0%, #f5f5f7 100%)',
+        minHeight: '100vh',
+        fontFamily: typography.fontFamily,
+      }}
+    >
+      <div
+        style={{
+          background: 'rgba(255, 255, 255, 0.72)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.4)',
+          borderRadius: borderRadius.lg,
+          boxShadow: shadows.lg,
+          padding: spacing[16],
+          maxWidth: '360px',
+          width: '100%',
+        }}
+      >
         {/* Logo inside palette */}
-        <img src={supfitLogo} alt="Supfit" className="signup-logo" />
-        <div className="signup-toggle">
-          <div className={`signup-toggle-thumb ${isLogin ? 'right' : ''}`} />
+        <img
+          src={supfitLogo}
+          alt="Supfit"
+          style={{
+            display: 'block',
+            margin: `0 auto ${spacing[12]}`,
+            maxWidth: '120px',
+            height: 'auto',
+          }}
+        />
+        <div
+          style={{
+            position: 'relative',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            alignItems: 'center',
+            gap: 0,
+            padding: spacing[1],
+            borderRadius: '9999px',
+            border: '1px solid rgba(255, 255, 255, 0.5)',
+            background: 'rgba(243, 244, 246, 0.7)',
+            backdropFilter: 'blur(12px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+            width: '320px',
+            margin: `0 auto ${spacing[16]}`,
+            boxShadow: '0 6px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: spacing[1],
+              left: spacing[1],
+              height: 'calc(100% - 8px)',
+              width: 'calc(50% - 8px)',
+              borderRadius: '9999px',
+              zIndex: 0,
+              background: `linear-gradient(180deg, ${colors.primary}a5, ${colors.primary}6b)`,
+              border: `1px solid ${colors.primary}a5`,
+              boxShadow: `0 10px 24px ${colors.primary}59, 0 2px 8px rgba(0, 0, 0, 0.08)`,
+              backdropFilter: 'blur(10px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+              transition: `transform ${transitions.normal}`,
+              transform: isLogin ? 'translateX(100%)' : 'translateX(0)',
+            }}
+          />
           <button
             type="button"
             onClick={() => setIsLogin(false)}
-            className={`signup-toggle-btn ${isSignup ? 'active' : ''}`}
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              fontWeight: 600,
+              fontSize: typography.fontSize.sm,
+              color: isSignup ? '#ffffff' : '#4b5563',
+              padding: `${spacing[2]} ${spacing[4]}`,
+              borderRadius: '9999px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              transition: `color ${transitions.normal}`,
+              textShadow: isSignup ? '0 1px 2px rgba(255, 60, 32, 0.5), 0 1px 1px rgba(0, 0, 0, 0.08)' : 'none',
+            }}
           >
             Sign Up
           </button>
           <button
             type="button"
             onClick={() => setIsLogin(true)}
-            className={`signup-toggle-btn ${isLogin ? 'active' : ''}`}
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              fontWeight: 600,
+              fontSize: typography.fontSize.sm,
+              color: isLogin ? '#ffffff' : '#4b5563',
+              padding: `${spacing[2]} ${spacing[4]}`,
+              borderRadius: '9999px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              transition: `color ${transitions.normal}`,
+              textShadow: isLogin ? '0 1px 2px rgba(255, 60, 32, 0.5), 0 1px 1px rgba(0, 0, 0, 0.08)' : 'none',
+            }}
           >
             Log In
           </button>

@@ -49,7 +49,7 @@ const CreateProfile = () => {
   const handleGoToHome = () => {
     // Navigate based on user role
     if (userRole === 'coach' || profileData.goal === 'Coach' || profileData.goal === 'Dietician') {
-      navigate('/coach');
+      navigate('/coach-home');
     } else {
       navigate('/home');
     }
