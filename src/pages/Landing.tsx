@@ -8,7 +8,24 @@ import {
   ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
-import supfitLogo from '@/assets/supfit-logo.png';
+import supfitLogo from '@/assets/Supfitlogo.png';
+// Auth page design tokens
+const landingBg = 'linear-gradient(135deg, #e0e7ff 0%, #f5d0fe 100%)';
+const glassCardStyle = {
+  background: 'rgba(255,255,255,0.75)',
+  borderRadius: '16px',
+  boxShadow: '0 12px 40px 0 rgba(31, 38, 135, 0.25)',
+  border: '1px solid rgba(255,255,255,0.3)',
+  backdropFilter: 'blur(20px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+  padding: '48px 32px 48px',
+  maxWidth: 450,
+  width: '100%',
+  margin: '0 auto',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+};
 import { useNavigate } from 'react-router-dom';
 import { colors, typography, shadows, spacing, borderRadius, transitions } from '@/lib/designSystem';
 
@@ -37,11 +54,11 @@ const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => (
         style={{
           height: `${32}px`,
           width: `${32}px`,
-          background: `${colors.primary}20`,
-          border: `1px solid ${colors.primary}33`,
+          background: colors.primary,
+          border: `1px solid ${colors.primary}`,
         }}
       >
-        <Icon className="text-[#FF3C20]" style={{ height: '16px', width: '16px', color: colors.primary }} />
+        <Icon style={{ height: '16px', width: '16px', color: '#fff' }} />
       </div>
       <div>
         <h3 style={{ fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.sm, lineHeight: '1.2' }}>
@@ -82,7 +99,8 @@ const RoleCard = ({ icon: Icon, title, description, buttonText, role }: RoleCard
       }}
       style={{
         width: '100%',
-        background: `linear-gradient(135deg, ${colors.background.light}, rgba(255,255,255,0.85))`,
+        height: '80px',
+        background: colors.primary,
         border: `1.5px solid ${colors.primary}1a`,
         borderRadius: borderRadius.lg,
         boxShadow: shadows.sm,
@@ -92,16 +110,18 @@ const RoleCard = ({ icon: Icon, title, description, buttonText, role }: RoleCard
         alignItems: 'center',
         gap: spacing[18],
         padding: `${spacing[20]} ${spacing[18]}`,
-        transition: transitions.normal,
+        transition: 'all 0.3s ease',
         position: 'relative',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.boxShadow = shadows.md;
         (e.currentTarget.style as CSSStyleDeclaration).borderColor = `${colors.primary}2d`;
+        e.currentTarget.style.transform = 'translateY(-2px)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.boxShadow = shadows.sm;
         (e.currentTarget.style as any).borderColor = `${colors.primary}1a`;
+        e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
       <div
@@ -121,9 +141,9 @@ const RoleCard = ({ icon: Icon, title, description, buttonText, role }: RoleCard
       <div style={{ flex: 1, textAlign: 'left' }}>
         <div
           style={{
-            fontWeight: typography.fontWeight.bold,
-            fontSize: typography.fontSize['2xl'],
-            color: colors.text.primary,
+            fontWeight: 600,
+            fontSize: 20,
+            color: '#ffffff',
             fontFamily: typography.fontFamily.system,
           }}
         >
@@ -131,8 +151,9 @@ const RoleCard = ({ icon: Icon, title, description, buttonText, role }: RoleCard
         </div>
         <div
           style={{
-            fontSize: typography.fontSize.base,
-            color: colors.text.secondary,
+            fontSize: 14,
+            fontWeight: 400,
+            color: '#ffffff',
             marginTop: spacing[2],
             fontFamily: typography.fontFamily.system,
           }}
@@ -142,7 +163,7 @@ const RoleCard = ({ icon: Icon, title, description, buttonText, role }: RoleCard
             : 'Grow your fitness business with Supfit'}
         </div>
       </div>
-      <ChevronRight style={{ width: '24px', height: '24px', color: colors.primary, flexShrink: 0 }} />
+      <ChevronRight style={{ width: '24px', height: '24px', color: '#ffffff', flexShrink: 0 }} />
     </button>
   );
 };
@@ -172,70 +193,72 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: colors.background.light }}>
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-transparent" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px]" />
-      </div>
-
-      <main className="relative z-10 flex flex-col items-center px-3 py-4">
-        <div style={{ marginBottom: spacing[16] }}>
+    <div
+      className="min-h-screen w-full flex items-center justify-center"
+      style={{
+        minHeight: '100vh',
+        fontFamily: 'SF Pro Display, SF Pro Text, Roboto, Arial, sans-serif',
+        background: landingBg,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={glassCardStyle}>
+        {/* Logo centered at top */}
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', marginBottom: 0, marginTop: 0 }}>
           <img
             src={supfitLogo}
             alt="SupFit"
-            className="signup-logo"
-            style={{ background: 'transparent' }}
+            style={{
+              width: '150px',
+              maxWidth: '60vw',
+              height: 'auto',
+              background: 'transparent',
+              borderRadius: 0,
+              boxShadow: 'none',
+              filter: 'drop-shadow(0 2px 12px #ff3c2066)',
+              margin: 0,
+              verticalAlign: 'middle',
+              display: 'block',
+            }}
           />
         </div>
-
-        <div className="text-center" style={{ marginBottom: spacing[20] }}>
+        {/* Title & Subtitle */}
+        <div className="text-center" style={{ marginBottom: 0, marginTop: 12 }}>
           <h1
             style={{
-              fontWeight: typography.fontWeight.bold,
-              fontSize: typography.fontSize['2xl'],
-              marginBottom: spacing[12],
-              color: colors.text.primary,
-              letterSpacing: typography.letterSpacing.tight,
+              fontWeight: 700,
+              fontSize: 40,
+              marginBottom: 12,
+              color: '#1d1d1f',
+              letterSpacing: '-0.6px',
+              lineHeight: 1.1,
             }}
           >
-            Your Personal Health AI Companion
+            <div
+              className="flex items-center justify-center gap-2"
+              style={{ color: '#FF3C20', marginBottom: 18 }}
+            >
+              <Sparkles style={{ height: '16px', width: '16px', color: '#FF3C20' }} />
+              <span style={{ fontSize: 15, fontWeight: 500 }}> Fuel your fitness, powered by AI </span>
+              <Sparkles style={{ height: '16px', width: '16px', color: '#FF3C20' }} />
+            </div>
           </h1>
-          <div
-            className="flex items-center justify-center gap-2"
-            style={{ color: colors.primary, marginBottom: spacing[16] }}
-          >
-            <Sparkles style={{ height: '16px', width: '16px', color: colors.primary }} />
-            <span style={{ fontSize: typography.fontSize.sm }}>{' '}
-              Powered by Advanced AI
-            </span>
-            <Sparkles style={{ height: '16px', width: '16px', color: colors.primary }} />
-          </div>
         </div>
-
-        <div
-          className="grid grid-cols-2 w-[95%] max-w-3xl"
-          style={{ gap: spacing[12], marginBottom: spacing[16] }}
-        >
-          {features.map((f) => (
-            <FeatureCard key={f.title} icon={f.icon} title={f.title} description={f.description} />
-          ))}
-        </div>
-
-        {/* Trust/KPI strip intentionally omitted to match mockup exactly */}
-
-        <div className="w-full flex justify-center px-3">
-          <div className="section-panel w-full max-w-6xl" style={{ padding: `${spacing[20]} ${spacing[24]}` }}>
+        {/* Role selection - centered vertically */}
+        <div className="w-full flex justify-center px-3" style={{ alignItems: 'flex-start', display: 'flex', marginTop: 0, marginBottom: 0 }}>
+          <div className="section-panel w-full max-w-6xl" style={{ padding: '18px 24px 0 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: 0, marginBottom: 0 }}>
             <h2
               style={{
                 textAlign: 'center',
-                fontWeight: typography.fontWeight.semibold,
-                fontSize: typography.fontSize.base,
-                marginBottom: spacing[16],
+                fontWeight: 600,
+                fontSize: 20,
+                marginBottom: 16,
               }}
             >
               Choose Your Role
             </h2>
-            <div className="flex flex-col items-center" style={{ gap: spacing[12] }}>
+            <div className="flex flex-col items-center" style={{ gap: 10 }}>
               <div className="w-full max-w-xl">
                 <RoleCard
                   icon={Target}
@@ -258,17 +281,26 @@ export default function Landing() {
           </div>
         </div>
 
+        {/* Features - moved below role selection */}
+        <div
+          className="grid grid-cols-2 w-[95%] max-w-3xl"
+          style={{ gap: 24, margin: '24px auto 24px', justifyContent: 'center' }}
+        >
+          {features.map((f) => (
+            <FeatureCard key={f.title} icon={f.icon} title={f.title} description={f.description} />
+          ))}
+        </div>
         <p
           style={{
             textAlign: 'center',
-            color: colors.text.secondary,
-            fontSize: typography.fontSize.xs,
-            marginTop: spacing[16],
+            color: '#6e6e73',
+            fontSize: 13,
+            marginTop: 24,
           }}
         >
           © 2024 SupFit. Your journey to better health starts here.
         </p>
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,9 +1,31 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import supfitLogo from '@/assets/supfit-logo.png';
-import { colors, typography, spacing, shadows, borderRadius, transitions } from '@/lib/designSystem';
+import supfitLogo from '../assets/Supfitlogo.png';
+import GoogleIcon from '@/assets/GoogleIcon.svg';
+import AppleLogo from '@/components/AppleLogo';
+import MobileIcon from '@/assets/MobileIcon.svg';
 
 const Auth = () => {
+    // Add missing social login handlers to prevent ReferenceError
+    // Social login handlers using Supabase
+    const handleGoogleLogin = async () => {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      if (error) alert('Google sign-in failed: ' + error.message);
+    };
+
+    const handleAppleLogin = async () => {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'apple' });
+      if (error) alert('Apple sign-in failed: ' + error.message);
+    };
+
+    const handleMobileLogin = async () => {
+      const phone = prompt('Enter your phone number (with country code):');
+      if (!phone) return;
+      const { error } = await supabase.auth.signInWithOtp({ phone });
+      if (error) alert('OTP sign-in failed: ' + error.message);
+      else alert('OTP sent! Please check your phone.');
+    };
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [userRole, setUserRole] = useState<string>('');
@@ -41,105 +63,106 @@ const Auth = () => {
         navigate('/home');
       }
     } else {
-      const roleParam = userRole ? `?role=${userRole}` : '';
-      navigate(`/create-profile${roleParam}`);
+      // Always go to /create-profile (which now renders CreateProfileStep1)
+      navigate('/create-profile');
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    console.log(`Login with ${provider}`);
-    const roleParam = userRole ? `?role=${userRole}` : '';
-    navigate(`/create-profile${roleParam}`);
-  };
+  // Removed unused handleSocialLogin function
 
   return (
-    <div
-      className="w-full flex justify-center px-4 py-6 sm:py-8"
-      style={{
-        background: 'linear-gradient(135deg, #f8f9fa 0%, #f5f5f7 100%)',
-        minHeight: '100vh',
-        fontFamily: typography.fontFamily,
-      }}
-    >
+      <>
       <div
+        className="min-h-screen w-full flex items-center justify-center px-[env(safe-area-inset-left,1vw)] py-[env(safe-area-inset-top,1vh)]"
         style={{
-          background: 'rgba(255, 255, 255, 0.72)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255, 255, 255, 0.4)',
-          borderRadius: borderRadius.lg,
-          boxShadow: shadows.lg,
-          padding: spacing[16],
-          maxWidth: '360px',
-          width: '100%',
+          minHeight: '100vh',
+          fontFamily: 'SF Pro Display, SF Pro Text, Roboto, Arial, sans-serif',
+          background: 'linear-gradient(135deg, #e0e7ff 0%, #f5d0fe 100%)',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        {/* Logo inside palette */}
-        <img
-          src={supfitLogo}
-          alt="Supfit"
+        {/* Apple glass effect card */}
+        <div
           style={{
-            display: 'block',
-            margin: `0 auto ${spacing[12]}`,
-            maxWidth: '120px',
-            height: 'auto',
+            background: 'rgba(255,255,255,0.65)',
+            borderRadius: 'clamp(8px, 2vw, 16px)',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+            border: '1.5px solid rgba(255,255,255,0.25)',
+            backdropFilter: 'blur(18px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+            padding: 'clamp(12px, 5vw, 24px) clamp(8px, 5vw, 20px) clamp(16px, 6vw, 28px)',
+            maxWidth: 'min(370px, 96vw)',
+            width: '100%',
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
           }}
-        />
+        >
+        {/* Logo centered at top with reduced spacing */}
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', marginBottom: 0, marginTop: 0 }}>
+          <img
+            src={supfitLogo}
+            alt="Supfit"
+            style={{
+              width: '150px',
+              maxWidth: '60vw',
+              height: 'auto',
+              background: 'transparent',
+              borderRadius: 0,
+              boxShadow: 'none',
+              filter: 'drop-shadow(0 2px 12px #ff3c2066)',
+              margin: 0,
+              verticalAlign: 'middle',
+              display: 'block',
+            }}
+          />
+        </div>
         <div
           style={{
             position: 'relative',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: 0,
-            padding: spacing[1],
-            borderRadius: '9999px',
-            border: '1px solid rgba(255, 255, 255, 0.5)',
-            background: 'rgba(243, 244, 246, 0.7)',
-            backdropFilter: 'blur(12px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-            width: '320px',
-            margin: `0 auto ${spacing[16]}`,
-            boxShadow: '0 6px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+            padding: 0,
+            borderRadius: 9999,
+            border: '2px solid rgba(255,255,255,0.35)',
+            background: 'linear-gradient(90deg, rgba(255,255,255,0.7) 60%, rgba(255,255,255,0.35) 100%)',
+            boxShadow: '0 4px 18px 0 #ff3c2033, 0 1.5px 8px #fff8',
+            width: '100%',
+            maxWidth: 'min(320px, 90vw)',
+            margin: '0 auto 2vh',
+            minHeight: 44,
           }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              top: spacing[1],
-              left: spacing[1],
-              height: 'calc(100% - 8px)',
-              width: 'calc(50% - 8px)',
-              borderRadius: '9999px',
-              zIndex: 0,
-              background: `linear-gradient(180deg, ${colors.primary}a5, ${colors.primary}6b)`,
-              border: `1px solid ${colors.primary}a5`,
-              boxShadow: `0 10px 24px ${colors.primary}59, 0 2px 8px rgba(0, 0, 0, 0.08)`,
-              backdropFilter: 'blur(10px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(10px) saturate(180%)',
-              transition: `transform ${transitions.normal}`,
-              transform: isLogin ? 'translateX(100%)' : 'translateX(0)',
-            }}
-          />
           <button
             type="button"
             onClick={() => setIsLogin(false)}
             style={{
-              position: 'relative',
-              zIndex: 1,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              fontWeight: 600,
-              fontSize: typography.fontSize.sm,
-              color: isSignup ? '#ffffff' : '#4b5563',
-              padding: `${spacing[2]} ${spacing[4]}`,
-              borderRadius: '9999px',
-              background: 'transparent',
+              flex: 1,
               border: 'none',
-              cursor: 'pointer',
-              transition: `color ${transitions.normal}`,
-              textShadow: isSignup ? '0 1px 2px rgba(255, 60, 32, 0.5), 0 1px 1px rgba(0, 0, 0, 0.08)' : 'none',
+              outline: 'none',
+              borderRadius: 9999,
+              background: isSignup
+                  ? 'linear-gradient(90deg, #ff3c20 0%, #ff8c42 100%)'
+                  : 'transparent',
+                color: isSignup ? '#fff' : '#ff3c20',
+                fontWeight: 700,
+                fontSize: 15,
+                padding: '9px 0',
+                margin: 2,
+                boxShadow: isSignup
+                  ? '0 2px 12px #ff3c2044, 0 1.5px 8px #fff8'
+                  : 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                filter: isSignup ? 'drop-shadow(0 2px 8px #ff3c2044)' : 'none',
+                textShadow: isSignup ? '0 1px 2px #ff8c4288' : 'none',
+                minWidth: 0,
+                minHeight: 36,
+                borderBottom: isSignup ? '2px solid #fff6' : 'none',
             }}
           >
             Sign Up
@@ -148,35 +171,40 @@ const Auth = () => {
             type="button"
             onClick={() => setIsLogin(true)}
             style={{
-              position: 'relative',
-              zIndex: 1,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              fontWeight: 600,
-              fontSize: typography.fontSize.sm,
-              color: isLogin ? '#ffffff' : '#4b5563',
-              padding: `${spacing[2]} ${spacing[4]}`,
-              borderRadius: '9999px',
-              background: 'transparent',
+              flex: 1,
               border: 'none',
-              cursor: 'pointer',
-              transition: `color ${transitions.normal}`,
-              textShadow: isLogin ? '0 1px 2px rgba(255, 60, 32, 0.5), 0 1px 1px rgba(0, 0, 0, 0.08)' : 'none',
+              outline: 'none',
+              borderRadius: 9999,
+              background: isLogin
+                  ? 'linear-gradient(90deg, #ff3c20 0%, #ff8c42 100%)'
+                  : 'transparent',
+                color: isLogin ? '#fff' : '#ff3c20',
+                fontWeight: 700,
+                fontSize: 15,
+                padding: '9px 0',
+                margin: 2,
+                boxShadow: isLogin
+                  ? '0 2px 12px #ff3c2044, 0 1.5px 8px #fff8'
+                  : 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                filter: isLogin ? 'drop-shadow(0 2px 8px #ff3c2044)' : 'none',
+                textShadow: isLogin ? '0 1px 2px #ff8c4288' : 'none',
+                minWidth: 0,
+                minHeight: 36,
+                borderBottom: isLogin ? '2px solid #fff6' : 'none',
             }}
           >
             Log In
           </button>
         </div>
         {/* Title & Subtitle */}
-        <h1 className="signup-title leading-tight">{isLogin ? 'Welcome Back!' : 'Sign Up'}</h1>
-        <p className="signup-subtitle leading-snug text-sm">
-          {isLogin ? 'Login to start your fitness journey' : "Let's get your account set up"}
-        </p>
+        {/* Removed heading above form (Sign Up / Welcome Back) */}
+          {/* Removed sign up heading and subtext below toggle button */}
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 max-w-sm mx-auto">
+        <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: 320, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {!isLogin && (
-            <div className="grid grid-cols-1">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label
                 htmlFor="name"
                 className="block text-sm font-semibold text-gray-700 mb-1 leading-snug"
@@ -189,11 +217,19 @@ const Auth = () => {
                 placeholder="Enter your name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="signup-input focus:outline-none"
+                style={{
+                  padding: '12px',
+                  borderRadius: 12,
+                  border: '1.5px solid #e0e7ff',
+                  fontSize: 15,
+                  background: 'rgba(243,244,246,0.7)',
+                  marginBottom: 2,
+                  outline: 'none',
+                }}
               />
             </div>
           )}
-          <div className="grid grid-cols-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label
               htmlFor="email"
               className="block text-sm font-semibold text-gray-700 mb-1 leading-snug"
@@ -206,10 +242,18 @@ const Auth = () => {
               placeholder="Enter your email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="signup-input focus:outline-none"
+              style={{
+                padding: '12px',
+                borderRadius: 12,
+                border: '1.5px solid #e0e7ff',
+                fontSize: 15,
+                background: 'rgba(243,244,246,0.7)',
+                marginBottom: 2,
+                outline: 'none',
+              }}
             />
           </div>
-          <div className="grid grid-cols-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <label
               htmlFor="password"
               className="block text-sm font-semibold text-gray-700 mb-1 leading-snug"
@@ -222,72 +266,132 @@ const Auth = () => {
               placeholder="Enter your password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="signup-input focus:outline-none"
+              style={{
+                padding: '12px',
+                borderRadius: 12,
+                border: '1.5px solid #e0e7ff',
+                fontSize: 15,
+                background: 'rgba(243,244,246,0.7)',
+                marginBottom: 2,
+                outline: 'none',
+              }}
             />
           </div>
-          <button type="submit" className="signup-btn h-10 text-sm sm:h-11 sm:text-base">
+          <button
+            type="submit"
+            style={{
+              width: '100%',
+              padding: '14px 0',
+              borderRadius: 9999,
+              background: 'linear-gradient(90deg, #ff3c20 0%, #ff8c42 100%)',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: 15,
+              border: 'none',
+              marginTop: 10,
+              marginBottom: 2,
+              boxShadow: '0 2px 12px #ff3c2044, 0 1.5px 8px #fff8',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+              filter: 'drop-shadow(0 2px 8px #ff3c2044)',
+              textShadow: '0 1px 2px #ff8c4288',
+              minHeight: 38,
+            }}
+          >
             {isLogin ? 'Log In' : 'Sign Up'}
           </button>
         </form>
         {/* Separator */}
-        <div className="signup-divider">
-          <span>or</span>
-        </div>
+        <div style={{
+          width: '100%',
+          textAlign: 'center',
+          margin: '10px 0 2px',
+          color: '#a1a1aa',
+          fontWeight: 500,
+          fontSize: 13,
+          letterSpacing: '0.2px',
+        }}>or</div>
 
         {/* Social Sign-in Options */}
-        <div className="max-w-sm mx-auto mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-          {/* Google */}
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('Google')}
-            className="signup-social-btn"
-          >
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md">
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                <path
-                  fill="#EA4335"
-                  d="M12 10.2v3.6h5.1c-.2 1.3-1.5 3.7-5.1 3.7-3.1 0-5.6-2.6-5.6-5.7s2.5-5.7 5.6-5.7c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.8 3.6 14.6 2.6 12 2.6 6.9 2.6 2.8 6.7 2.8 11.8S6.9 21 12 21c6.9 0 9.6-4.9 9.6-7.5 0-.5-.1-.8-.1-1.1H12z"
-                />
-              </svg>
-            </span>
-            <span className="text-sm font-medium text-gray-700">Continue with Google</span>
-          </button>
-
-          {/* Apple */}
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('Apple')}
-            className="signup-social-btn"
-          >
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md">
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                <path
-                  fill="#111827"
-                  d="M16.365 12.64c-.03-3.012 2.463-4.49 2.573-4.56-1.406-2.053-3.592-2.337-4.365-2.373-1.856-.19-3.619 1.088-4.56 1.088-.94 0-2.397-1.06-3.943-1.03-2.03.03-3.915 1.185-4.957 3.01-2.108 3.65-.54 9.063 1.516 12.03 1.006 1.452 2.2 3.08 3.77 3.02 1.515-.06 2.086-.976 3.922-.976 1.836 0 2.346.976 3.943.946 1.635-.03 2.673-1.482 3.676-2.94 1.157-1.69 1.635-3.34 1.665-3.43-.03-.03-3.196-1.226-3.24-4.785zM13.44 4.625c.835-1.013 1.399-2.43 1.248-3.84-1.21.05-2.672.805-3.537 1.818-.776.896-1.457 2.327-1.276 3.71 1.335.1 2.73-.675 3.565-1.688z"
-                />
-              </svg>
-            </span>
-            <span className="text-sm font-medium text-gray-700">Continue with Apple</span>
-          </button>
-
-          {/* Mobile OTP */}
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('Mobile OTP')}
-            className="signup-social-btn"
-          >
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md">
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                <rect x="7" y="3" width="10" height="18" rx="2" fill="#10B981" />
-                <rect x="9" y="5" width="6" height="14" rx="1" fill="#ffffff" />
-                <circle cx="12" cy="17.5" r="1" fill="#D1D5DB" />
-              </svg>
-            </span>
-            <span className="text-sm font-medium text-gray-700">Login with Mobile OTP</span>
-          </button>
+        <div style={{
+          width: '100%',
+          maxWidth: 'min(320px, 90vw)',
+          margin: '0 auto',
+          marginTop: '2vh',
+          display: 'grid',
+          gridTemplateColumns: '1fr',
+          gap: 'clamp(8px, 2vw, 14px)',
+        }}>
+          {/* Redesigned social login section as per screenshot */}
+          <div style={{ marginTop: 12, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1d1d1f', marginBottom: 18, textAlign: 'center', letterSpacing: '-0.5px' }}>Continue with</h2>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: 'clamp(18px, 8vw, 48px)', justifyContent: 'center', alignItems: 'center', marginBottom: 8, minWidth: 180 }}>
+              <button
+                onClick={handleGoogleLogin}
+                style={{
+                  background: '#fff',
+                  border: '1.5px solid #e5e7eb',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  padding: 'clamp(4px, 2vw, 8px)',
+                  width: 'clamp(36px, 12vw, 48px)',
+                  height: 'clamp(36px, 12vw, 48px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px #0001',
+                  transition: 'box-shadow 0.2s',
+                }}
+                aria-label="Continue with Google"
+              >
+                <img src={GoogleIcon} alt="Google" style={{ width: 'clamp(20px, 7vw, 28px)', height: 'clamp(20px, 7vw, 28px)', display: 'block' }} />
+              </button>
+              <button
+                onClick={handleAppleLogin}
+                style={{
+                  background: '#fff',
+                  border: '1.5px solid #e5e7eb',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  padding: 'clamp(4px, 2vw, 8px)',
+                  width: 'clamp(36px, 12vw, 48px)',
+                  height: 'clamp(36px, 12vw, 48px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px #0001',
+                  transition: 'box-shadow 0.2s',
+                }}
+                aria-label="Continue with Apple"
+              >
+                <AppleLogo width={28} height={28} style={{ width: 'clamp(20px, 7vw, 28px)', height: 'clamp(20px, 7vw, 28px)', display: 'block' }} />
+              </button>
+              <button
+                onClick={handleMobileLogin}
+                style={{
+                  background: '#fff',
+                  border: '1.5px solid #e5e7eb',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  padding: 'clamp(4px, 2vw, 8px)',
+                  width: 'clamp(36px, 12vw, 48px)',
+                  height: 'clamp(36px, 12vw, 48px)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px #0001',
+                  transition: 'box-shadow 0.2s',
+                }}
+                aria-label="Continue with Mobile OTP"
+              >
+                <img src={MobileIcon} alt="Mobile OTP" style={{ width: 'clamp(20px, 7vw, 28px)', height: 'clamp(20px, 7vw, 28px)', display: 'block' }} />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  );
-};
+    </>
+    );
+  }
 export default Auth;
