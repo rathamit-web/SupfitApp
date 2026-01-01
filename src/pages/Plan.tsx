@@ -1,3 +1,4 @@
+// File removed: Plan.tsx is not used anywhere in the project (web navigation and imports reference other files or PlanNative.tsx for mobile).
 import { useState, useEffect } from 'react';
 import {
   Flame,
@@ -13,6 +14,7 @@ import {
   MessageCircle,
   CheckCircle2,
 } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
 const Plan = () => {
   const [hasCoachSubscription, setHasCoachSubscription] = useState(false);
@@ -26,6 +28,21 @@ const Plan = () => {
     setSelectedPlan(hasCoach ? 'coach' : 'ai');
   }, []);
 
+  const { id } = useParams();
+  const userId = id || 'default';
+
+  // Supplement Plan from localStorage
+  const [supplementPlan, setSupplementPlan] = useState(() => {
+    const saved = localStorage.getItem(`supplementPlan_${userId}`);
+    if (!saved) return null;
+    try {
+      const arr = JSON.parse(saved);
+      if (Array.isArray(arr) && arr.length > 0) return arr;
+      return null;
+    } catch {
+      return null;
+    }
+  });
   const coachWorkouts = [
     {
       id: 1,
@@ -581,66 +598,42 @@ const Plan = () => {
               >
                 💊 Supplement Plan
               </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div
-                  style={{
+              {supplementPlan && supplementPlan.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{
                     background: 'rgba(255, 255, 255, 0.6)',
                     borderRadius: '14px',
                     padding: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                  }}
-                >
-                  <CheckCircle2
-                    style={{ width: '18px', height: '18px', color: '#34c759', flexShrink: 0 }}
-                  />
-                  <div>
-                    <p
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#1d1d1f',
-                        margin: '0 0 2px 0',
-                      }}
-                    >
-                      Pre-Workout
-                    </p>
-                    <p style={{ fontSize: '13px', color: '#6e6e73', margin: 0 }}>
-                      BCAA (5g) - 20 minutes before workout
-                    </p>
+                    marginBottom: '8px',
+                  }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#34c759', margin: '0 0 6px 0' }}>{supplementPlan[0].title}</h3>
+                    <div style={{ display: 'flex', gap: '24px' }}>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: '14px', fontWeight: '600', color: '#1d1d1f', margin: '0 0 2px 0' }}>Pre-Workout</p>
+                        <ul style={{ paddingLeft: 18, margin: 0 }}>
+                          {supplementPlan[0].pre.map((item, i) => (
+                            <li key={i} style={{ fontSize: '13px', color: '#6e6e73', marginBottom: 2 }}>
+                              {item.label} <span style={{ color: '#34c759' }}>({item.note})</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: '14px', fontWeight: '600', color: '#1d1d1f', margin: '0 0 2px 0' }}>Post-Workout</p>
+                        <ul style={{ paddingLeft: 18, margin: 0 }}>
+                          {supplementPlan[0].post.map((item, i) => (
+                            <li key={i} style={{ fontSize: '13px', color: '#6e6e73', marginBottom: 2 }}>
+                              {item.label} <span style={{ color: '#34c759' }}>({item.note})</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.6)',
-                    borderRadius: '14px',
-                    padding: '14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                  }}
-                >
-                  <CheckCircle2
-                    style={{ width: '18px', height: '18px', color: '#34c759', flexShrink: 0 }}
-                  />
-                  <div>
-                    <p
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#1d1d1f',
-                        margin: '0 0 2px 0',
-                      }}
-                    >
-                      Post-Workout
-                    </p>
-                    <p style={{ fontSize: '13px', color: '#6e6e73', margin: 0 }}>
-                      Whey Protein (30g) + Creatine (5g) - Within 30 minutes
-                    </p>
-                  </div>
-                </div>
-              </div>
+              ) : (
+                <div style={{ color: '#6e6e73', fontSize: '14px' }}>No supplement plan recommended yet.</div>
+              )}
             </div>
 
             {/* Hydration */}

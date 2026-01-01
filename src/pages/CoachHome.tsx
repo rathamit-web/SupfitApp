@@ -1,3 +1,4 @@
+import CoachFooter from '@/components/CoachFooter';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { colors, typography, shadows, spacing, borderRadius, transitions } from '@/lib/designSystem';
 import {
@@ -14,13 +15,12 @@ import {
   UserPlus2,
   Star,
   Home,
-  User
+  User,
+  LayoutDashboard
 } from 'lucide-react';
-import RevenueTrackerIcon from '@/components/RevenueTrackerIcon';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Footer from '@/components/Footer';
 
 const posts = [
   {
@@ -67,8 +67,9 @@ const CoachHome = () => {
   const [workoutPosts, setWorkoutPosts] = useState(posts);
   // Use a ref object for workout file inputs
   const workoutFileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
-  // State for editing posts
-  // Removed unused editingPost, editCaption, editWorkout state
+  // State for showing likes and comments modals
+  const [showLikesModal, setShowLikesModal] = useState<number | null>(null);
+  const [showCommentsModal, setShowCommentsModal] = useState<number | null>(null);
 
   useEffect(() => {
     localStorage.setItem('coachProfileImage', profileImage);
@@ -222,6 +223,46 @@ const CoachHome = () => {
     }
   };
 
+  // Mock data for likes and comments
+  const postLikes: { [key: number]: Array<{ id: number; name: string; avatar: string; time: string }> } = {
+    1: [
+      { id: 1, name: 'Sarah Johnson', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', time: '2h ago' },
+      { id: 2, name: 'Mike Chen', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', time: '5h ago' },
+      { id: 3, name: 'Emma Wilson', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80', time: '1d ago' },
+    ],
+    2: [
+      { id: 1, name: 'David Lee', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80', time: '1h ago' },
+      { id: 2, name: 'Lisa Brown', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', time: '3h ago' },
+    ],
+    3: [
+      { id: 1, name: 'John Smith', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80', time: '30m ago' },
+      { id: 2, name: 'Anna Davis', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80', time: '2h ago' },
+      { id: 3, name: 'Tom Wilson', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', time: '4h ago' },
+    ],
+    4: [
+      { id: 1, name: 'Rachel Green', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', time: '1h ago' },
+      { id: 2, name: 'Chris Martin', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80', time: '6h ago' },
+    ],
+  };
+
+  const postComments: { [key: number]: Array<{ id: number; name: string; avatar: string; message: string; time: string }> } = {
+    1: [
+      { id: 1, name: 'Sarah Johnson', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', message: 'Amazing workout! Keep it up! 💪', time: '2h ago' },
+      { id: 2, name: 'Mike Chen', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', message: 'This is so inspiring! Can you share the routine?', time: '5h ago' },
+    ],
+    2: [
+      { id: 1, name: 'David Lee', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80', message: 'Great form! 🔥', time: '1h ago' },
+    ],
+    3: [
+      { id: 1, name: 'John Smith', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80', message: 'Incredible transformation! How long did this take?', time: '30m ago' },
+      { id: 2, name: 'Anna Davis', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80', message: 'You\'re such an inspiration! 🙌', time: '2h ago' },
+      { id: 3, name: 'Tom Wilson', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', message: 'Would love to train with you!', time: '4h ago' },
+    ],
+    4: [
+      { id: 1, name: 'Rachel Green', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', message: 'Perfect yoga session! 🧘', time: '1h ago' },
+    ],
+  };
+
   return (
     <main
       style={{
@@ -322,14 +363,13 @@ const CoachHome = () => {
                 style={{ display: 'none' }}
                 onChange={handleProfileImageChange}
               />
-            </div>
-
-            {/* Profile Info */}
-            <div className="flex-1 space-y-4">
+              </div>
+              
+              {/* Name and Title Section */}
               <div>
                 <h1
                   style={{
-                    fontSize: typography.fontSize['7xl'],
+                    fontSize: typography.fontSize['4xl'],
                     fontWeight: typography.fontWeight.bold,
                     marginBottom: spacing[8],
                     background: `linear-gradient(90deg, ${colors.primary} 0%, #ff5722 100%)`,
@@ -345,7 +385,7 @@ const CoachHome = () => {
               </div>
 
               {/* Stats */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px' }}>
+              <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '18px', marginTop: spacing[16] }}>
                 {stats.map((stat) => {
                   const Icon = stat.icon;
                   return (
@@ -359,8 +399,7 @@ const CoachHome = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: spacing[12],
-                        minWidth: '140px',
-                        flex: '1 1 140px',
+                        flex: '1',
                         backdropFilter: 'blur(12px)',
                         WebkitBackdropFilter: 'blur(12px)',
                         border: '0.5px solid rgba(0,0,0,0.04)',
@@ -371,14 +410,14 @@ const CoachHome = () => {
                         style={{
                           padding: spacing[8],
                           borderRadius: borderRadius.lg,
-                          background: 'linear-gradient(135deg, #f5f5f7 0%, #e5e5ea 100%)',
+                          background: colors.primary,
                           boxShadow: shadows.xs,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                         }}
                       >
-                        <Icon style={{ width: '22px', height: '22px', color: colors.text.primary, strokeWidth: 2 }} />
+                        <Icon style={{ width: '22px', height: '22px', color: '#ffffff', strokeWidth: 2 }} />
                       </div>
                       <div>
                         <p style={{ fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, color: colors.text.primary, fontFamily: 'inherit', letterSpacing: typography.letterSpacing.tight, marginBottom: 0 }}>
@@ -395,549 +434,908 @@ const CoachHome = () => {
                   );
                 })}
               </div>
-            </div>
-          </div>{' '}
-          {/* Close flex-col md:flex-row items-start gap-8 */}
-        </div>{' '}
-        {/* Close container mx-auto px-4 py-8 relative */}
-      </header>
-      {/* Recent Workouts Section */}
-      <section style={{ display: 'flex', flexDirection: 'column', gap: spacing[24], marginTop: spacing[32] }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2
-            style={{
-              fontSize: typography.fontSize['4xl'],
-              fontWeight: typography.fontWeight.bold,
-              letterSpacing: typography.letterSpacing.tight,
-              color: colors.text.primary,
-            }}
-          >
-            Recent Workouts
-          </h2>
-          <span
-            style={{
-              padding: `${spacing[8]} ${spacing[16]}`,
-              borderRadius: borderRadius.lg,
-              background: `rgba(${Number.parseInt(colors.primary.substring(1, 3), 16)}, ${Number.parseInt(colors.primary.substring(3, 5), 16)}, ${Number.parseInt(colors.primary.substring(5, 7), 16)}, 0.1)`,
-              color: colors.primary,
-              fontWeight: typography.fontWeight.semibold,
-              fontSize: typography.fontSize.xs,
-            }}
-          >
-            This Week: {workoutPosts.length} workouts
-          </span>
+          </div>
         </div>
+      </header>
+
+      {/* Main Content Container */}
+      <div className="container mx-auto px-4 py-8" style={{ maxWidth: '1400px' }}>
+        {/* Recent Workouts Section */}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: spacing[24], marginBottom: spacing[32] }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <h2
+        style={{
+          fontSize: typography.fontSize['4xl'],
+          fontWeight: typography.fontWeight.bold,
+          letterSpacing: typography.letterSpacing.tight,
+          color: colors.text.primary,
+        }}
+      >
+        Recent Workouts
+      </h2>
+    </div>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+        gap: spacing[16],
+      }}
+    >
+      {workoutPosts.map((post, idx) => (
         <div
+          key={post.id}
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-            gap: spacing[16],
+            background: 'rgba(255, 255, 255, 0.7)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(0, 0, 0, 0.08)',
+            borderRadius: borderRadius['2xl'],
+            overflow: 'hidden',
+            boxShadow: shadows.lg,
+            display: 'flex',
+            flexDirection: 'column',
+            transition: transitions.normal,
           }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = shadows.xl;
+          } }
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = shadows.lg;
+          } }
         >
-          {workoutPosts.map((post, idx) => (
-            <div
-              key={post.id}
+          <div style={{ position: 'relative' }}>
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              ref={el => {
+                if (el) workoutFileInputRefs.current[post.id] = el;
+              } }
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    const updated = workoutPosts.map(p => p.id === post.id ? { ...p, image: typeof reader.result === 'string' ? reader.result : p.image } : p
+                    );
+                    setWorkoutPosts(updated);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              } } />
+            <img
+              src={post.image}
+              alt={post.caption}
               style={{
-                background: 'rgba(255, 255, 255, 0.7)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-                border: '1px solid rgba(0, 0, 0, 0.08)',
-                borderRadius: borderRadius['2xl'],
-                overflow: 'hidden',
-                boxShadow: shadows.lg,
+                width: '100%',
+                height: '240px',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                cursor: 'pointer',
+              }}
+              onClick={() => workoutFileInputRefs.current[post.id]?.click()} />
+            {/* Edit Image Button */}
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                workoutFileInputRefs.current[post.id]?.click();
+              } }
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                boxShadow: shadows.md,
                 display: 'flex',
-                flexDirection: 'column',
-                transition: transitions.normal,
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: transitions.fast,
+                padding: 0,
+                zIndex: 2,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = shadows.xl;
-              }}
+                e.currentTarget.style.background = `rgba(${Number.parseInt(colors.primary.substring(1, 3), 16)}, ${Number.parseInt(colors.primary.substring(3, 5), 16)}, ${Number.parseInt(colors.primary.substring(5, 7), 16)}, 0.95)`;
+                e.currentTarget.style.transform = 'scale(1.1)';
+                const icon = e.currentTarget.querySelector('svg');
+                if (icon) icon.style.color = '#ffffff';
+              } }
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = shadows.lg;
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
+                e.currentTarget.style.transform = 'scale(1)';
+                const icon = e.currentTarget.querySelector('svg');
+                if (icon) icon.style.color = colors.text.primary;
+              } }
+              aria-label="Edit workout image"
+            >
+              <Edit2
+                style={{
+                  width: '16px',
+                  height: '16px',
+                  color: colors.text.primary,
+                  transition: transitions.fast,
+                }} />
+            </button>
+            <span
+              style={{
+                position: 'absolute',
+                top: '16px',
+                left: '16px',
+                padding: spacing[6],
+                borderRadius: borderRadius.md,
+                background: colors.primary,
+                color: '#ffffff',
+                fontSize: typography.fontSize.xs,
+                fontWeight: typography.fontWeight.bold,
+                boxShadow: shadows.md,
               }}
             >
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  ref={el => {
-                    if (el) workoutFileInputRefs.current[post.id] = el;
-                  }}
-                  onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        const updated = workoutPosts.map(p =>
-                          p.id === post.id ? { ...p, image: typeof reader.result === 'string' ? reader.result : p.image } : p
-                        );
-                        setWorkoutPosts(updated);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
-                <img
-                  src={post.image}
-                  alt={post.caption}
-                  style={{
-                    width: '100%',
-                    height: '240px',
-                    objectFit: 'cover',
-                    objectPosition: 'center',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => workoutFileInputRefs.current[post.id]?.click()}
-                />
-                {/* Edit Image Button */}
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    workoutFileInputRefs.current[post.id]?.click();
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(0, 0, 0, 0.1)',
-                    boxShadow: shadows.md,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: transitions.fast,
-                    padding: 0,
-                    zIndex: 2,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = `rgba(${Number.parseInt(colors.primary.substring(1, 3), 16)}, ${Number.parseInt(colors.primary.substring(3, 5), 16)}, ${Number.parseInt(colors.primary.substring(5, 7), 16)}, 0.95)`;
-                    e.currentTarget.style.transform = 'scale(1.1)';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = '#ffffff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
-                    e.currentTarget.style.transform = 'scale(1)';
-                    const icon = e.currentTarget.querySelector('svg');
-                    if (icon) icon.style.color = colors.text.primary;
-                  }}
-                  aria-label="Edit workout image"
-                >
-                  <Edit2
-                    style={{
-                      width: '16px',
-                      height: '16px',
-                      color: colors.text.primary,
-                      transition: transitions.fast,
-                    }}
-                  />
-                </button>
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '16px',
-                    left: '16px',
-                    padding: spacing[6],
-                    borderRadius: borderRadius.md,
-                    background: colors.primary,
-                    color: '#ffffff',
-                    fontSize: typography.fontSize.xs,
-                    fontWeight: typography.fontWeight.bold,
-                    boxShadow: shadows.md,
-                  }}
-                >
-                  {post.workout}
-                </span>
-              </div>
-              <div
-                style={{
-                  padding: spacing[16],
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: spacing[12],
-                  flex: 1,
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    gap: spacing[8],
-                  }}
-                >
-                  <p
-                    style={{
-                      fontWeight: typography.fontWeight.semibold,
-                      fontSize: typography.fontSize.base,
-                      color: colors.text.primary,
-                      lineHeight: 1.4,
-                      flex: 1,
-                    }}
-                  >
-                    {post.caption}
-                  </p>
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[16],
-                    color: colors.text.tertiary,
-                    fontSize: typography.fontSize.sm,
-                    marginTop: 'auto',
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: spacing[4] }}>
-                    <Heart style={{ width: '16px', height: '16px' }} />
-                    {post.likes}
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: spacing[4] }}>
-                    <MessageCircle style={{ width: '16px', height: '16px' }} />
-                    {post.comments}
-                  </span>
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing[4],
-                      marginLeft: 'auto',
-                    }}
-                  >
-                    <Share2 style={{ width: '16px', height: '16px' }} />
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      <div>
-        {/* All main sections: Stats, New Request, Active Clients, Today's Schedule, Payment Tracker, Messages */}
-
-        {/* New Request Section */}
-        <section className="space-y-6">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>New Request</h2>
+              {post.workout}
+            </span>
           </div>
           <div
             style={{
-              background: 'rgba(255,255,255,0.92)',
-              borderRadius: borderRadius['2xl'],
-              boxShadow: shadows.sm,
-              padding: spacing[24],
-              border: '0.5px solid rgba(0,0,0,0.04)',
+              padding: spacing[16],
               display: 'flex',
               flexDirection: 'column',
-              gap: spacing[18],
+              gap: spacing[12],
+              flex: 1,
             }}
           >
-            {/* Example request, replace with dynamic data as needed */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: spacing[8],
+              }}
+            >
+              <p
+                style={{
+                  fontWeight: typography.fontWeight.semibold,
+                  fontSize: typography.fontSize.base,
+                  color: colors.text.primary,
+                  lineHeight: 1.4,
+                  flex: 1,
+                }}
+              >
+                {post.caption}
+              </p>
+            </div>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: spacing[18],
+                gap: spacing[16],
+                color: colors.text.tertiary,
+                fontSize: typography.fontSize.sm,
+                marginTop: 'auto',
               }}
             >
-              <div style={{ flex: 1 }}>
-                <p
-                  style={{
-                    fontWeight: typography.fontWeight.semibold,
-                    fontSize: typography.fontSize.lg,
-                    color: colors.text.primary,
-                    marginBottom: spacing[4],
-                  }}
-                >
-                  Subscription Request from <span style={{ color: colors.primary }}>Amit Sharma</span>
-                </p>
-                <p style={{ color: colors.text.secondary, fontSize: typography.fontSize.base, marginBottom: spacing[2] }}>
-                  Plan: <span style={{ color: colors.primary, fontWeight: typography.fontWeight.semibold }}>Premium Diet Plan</span>
-                </p>
-                <p style={{ color: colors.text.secondary, fontSize: typography.fontSize.base }}>
-                  Payment: <span style={{ color: colors.primary, fontWeight: typography.fontWeight.semibold }}>₹1200</span> •
-                  Status: <span style={{ color: '#34c759', fontWeight: typography.fontWeight.semibold }}>Paid</span>
-                </p>
-              </div>
-              {/* Removed View Details button */}
+              <button
+                onClick={() => setShowLikesModal(post.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[4],
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: colors.text.tertiary,
+                  fontSize: typography.fontSize.sm,
+                  padding: 0,
+                  fontFamily: 'inherit',
+                  transition: transitions.fast,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = colors.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = colors.text.tertiary;
+                }}
+              >
+                <Heart style={{ width: '16px', height: '16px' }} />
+                {post.likes}
+              </button>
+              <button
+                onClick={() => setShowCommentsModal(post.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[4],
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: colors.text.tertiary,
+                  fontSize: typography.fontSize.sm,
+                  padding: 0,
+                  fontFamily: 'inherit',
+                  transition: transitions.fast,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = colors.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = colors.text.tertiary;
+                }}
+              >
+                <MessageCircle style={{ width: '16px', height: '16px' }} />
+                {post.comments}
+              </button>
+              <button
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[4],
+                  marginLeft: 'auto',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: colors.text.tertiary,
+                  fontSize: typography.fontSize.sm,
+                  padding: 0,
+                  fontFamily: 'inherit',
+                  transition: transitions.fast,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = colors.primary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = colors.text.tertiary;
+                }}
+              >
+                <Share2 style={{ width: '16px', height: '16px' }} />
+              </button>
             </div>
           </div>
+        </div>
+      ))}
+    </div>
+        </section>
+
+        {/* New Request Section */}
+        <section className="space-y-6" style={{ marginBottom: spacing[32] }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>New Request</h2>
+        </div>
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.92)',
+            borderRadius: borderRadius['2xl'],
+            boxShadow: shadows.sm,
+            padding: spacing[24],
+            border: '0.5px solid rgba(0,0,0,0.04)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: spacing[18],
+          }}
+        >
+          {/* Example request, replace with dynamic data as needed */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: spacing[18],
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <p
+                style={{
+                  fontWeight: typography.fontWeight.semibold,
+                  fontSize: typography.fontSize.lg,
+                  color: colors.text.primary,
+                  marginBottom: spacing[4],
+                }}
+              >
+                Subscription Request from <span style={{ color: colors.primary }}>Amit Sharma</span>
+              </p>
+              <p style={{ color: colors.text.secondary, fontSize: typography.fontSize.base, marginBottom: spacing[2] }}>
+                Plan: <span style={{ color: colors.primary, fontWeight: typography.fontWeight.semibold }}>Premium Diet Plan</span>
+              </p>
+              <p style={{ color: colors.text.secondary, fontSize: typography.fontSize.base }}>
+                Payment: <span style={{ color: colors.primary, fontWeight: typography.fontWeight.semibold }}>₹1200</span> •
+                Status: <span style={{ color: '#34c759', fontWeight: typography.fontWeight.semibold }}>Paid</span>
+              </p>
+            </div>
+            {/* Removed View Details button */}
+          </div>
+        </div>
         </section>
 
         {/* Active Clients Section */}
-        <section className="space-y-4">
-          <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Active Clients</h2>
-          <div style={{ display: 'flex', gap: spacing[24], overflowX: 'auto', paddingBottom: spacing[12] }}>
-            {activeClients.map((client) => (
-              <button
-                key={client.id}
-                onClick={() => navigate(`/client/${client.id}`)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: spacing[8],
-                  minWidth: '80px',
-                  background: 'rgba(255,255,255,0.72)',
-                  borderRadius: borderRadius.lg,
-                  boxShadow: shadows.sm,
-                  padding: `${spacing[12]} ${spacing[10]}`,
-                  border: '0.5px solid rgba(0,0,0,0.04)',
-                  position: 'relative',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                <div style={{ position: 'relative' }}>
-                  {client.isNew && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '-6px',
-                        right: '-6px',
-                        background: colors.primary,
-                        color: '#fff',
-                        fontSize: typography.fontSize.xs,
-                        padding: `${spacing[2]} ${spacing[7]}`,
-                        borderRadius: borderRadius.lg,
-                        zIndex: 2,
-                      }}
-                    >
-                      New
-                    </span>
-                  )}
-                  <Avatar
+        <section className="space-y-4" style={{ marginBottom: spacing[32] }}>
+        <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Active Clients</h2>
+        <div 
+          style={{ 
+            display: 'flex', 
+            gap: spacing[24], 
+            overflowX: 'auto', 
+            paddingBottom: spacing[12],
+            scrollbarWidth: 'none', /* Firefox */
+            msOverflowStyle: 'none', /* IE and Edge */
+            WebkitOverflowScrolling: 'touch', /* Smooth scrolling on iOS */
+          }}
+          className="hide-scrollbar"
+        >
+          <style>{`
+            .hide-scrollbar::-webkit-scrollbar {
+              display: none; /* Chrome, Safari, Opera */
+            }
+          `}</style>
+          {activeClients.map((client) => (
+            <button
+              key={client.id}
+              onClick={() => navigate(`/client/${client.id}`)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: spacing[8],
+                minWidth: '80px',
+                background: 'rgba(255,255,255,0.72)',
+                borderRadius: borderRadius.lg,
+                boxShadow: shadows.sm,
+                padding: `${spacing[12]} ${spacing[10]}`,
+                border: '0.5px solid rgba(0,0,0,0.04)',
+                position: 'relative',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: transitions.fast,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = shadows.md;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = shadows.sm;
+              }}
+            >
+              <div style={{ position: 'relative' }}>
+                {client.isNew && (
+                  <span
                     style={{
-                      width: '56px',
-                      height: '56px',
-                      border: '2px solid #fff',
-                      boxShadow: shadows.sm,
-                      background: 'rgba(255,255,255,0.72)',
+                      position: 'absolute',
+                      top: '-6px',
+                      right: '-6px',
+                      background: colors.primary,
+                      color: '#fff',
+                      fontSize: typography.fontSize.xs,
+                      padding: `${spacing[2]} ${spacing[7]}`,
+                      borderRadius: borderRadius.lg,
+                      zIndex: 2,
                     }}
                   >
-                    <AvatarImage src={client.avatar} />
-                    <AvatarFallback>{client.name[0]}</AvatarFallback>
-                  </Avatar>
-                </div>
-                <span style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.normal, color: colors.text.primary }}>
-                  {client.name}
-                </span>
-                <span style={{ fontSize: typography.fontSize.sm, color: colors.primary, fontWeight: typography.fontWeight.semibold }}>Chat</span>
-              </button>
-            ))}
-          </div>
+                    New
+                  </span>
+                )}
+                <Avatar
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    border: '2px solid #fff',
+                    boxShadow: shadows.sm,
+                    background: 'rgba(255,255,255,0.72)',
+                  }}
+                >
+                  <AvatarImage src={client.avatar} />
+                  <AvatarFallback>{client.name[0]}</AvatarFallback>
+                </Avatar>
+              </div>
+              <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.normal, color: colors.text.primary }}>
+                {client.name}
+              </span>
+            </button>
+          ))}
+        </div>
         </section>
 
         {/* Today's Schedule Section */}
-        <section className="space-y-4">
-          <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Today's Schedule</h2>
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.72)',
-              borderRadius: borderRadius['2xl'],
-              boxShadow: shadows.sm,
-              padding: spacing[18],
-              border: '0.5px solid rgba(0,0,0,0.04)',
-            }}
-          >
-            {todaySchedule.map((session) => (
-              <div
-                key={session.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: spacing[12],
-                  borderRadius: borderRadius.lg,
-                  background: 'rgba(255,255,255,0.92)',
-                  marginBottom: spacing[8],
-                  boxShadow: shadows.xs,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[12] }}>
-                  <div
-                    style={{
-                      padding: spacing[8],
-                      borderRadius: '50%',
-                      background: session.type === 'online' ? '#e3f0ff' : '#e3ffe3',
-                    }}
-                  >
-                    {session.type === 'online' ? (
-                      <Video style={{ width: '20px', height: '20px', color: '#2196f3' }} />
-                    ) : (
-                      <MapPin style={{ width: '20px', height: '20px', color: '#34c759' }} />
-                    )}
-                  </div>
-                  <div>
-                    <p style={{ fontWeight: typography.fontWeight.normal, color: colors.text.primary, fontSize: typography.fontSize.lg }}>
-                      {session.name}
-                    </p>
-                    <p style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
-                      {session.time} - {session.location}
-                    </p>
-                  </div>
-                </div>
-                <span
+        <section className="space-y-4" style={{ marginBottom: spacing[32] }}>
+        <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Today's Schedule</h2>
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.72)',
+            borderRadius: borderRadius['2xl'],
+            boxShadow: shadows.sm,
+            padding: spacing[18],
+            border: '0.5px solid rgba(0,0,0,0.04)',
+          }}
+        >
+          {todaySchedule.map((session) => (
+            <div
+              key={session.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: spacing[12],
+                borderRadius: borderRadius.lg,
+                background: 'rgba(255,255,255,0.92)',
+                marginBottom: spacing[8],
+                boxShadow: shadows.xs,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[12] }}>
+                <div
                   style={{
-                    border: `1px solid ${session.status === 'attend' ? '#34c759' : colors.primary}`,
-                    color: session.status === 'attend' ? '#34c759' : colors.primary,
-                    borderRadius: borderRadius.lg,
-                    padding: `${spacing[4]} ${spacing[14]}`,
-                    fontWeight: typography.fontWeight.semibold,
-                    fontSize: typography.fontSize.base,
-                    background:
-                      session.status === 'attend' ? 'rgba(52,199,89,0.08)' : `rgba(${Number.parseInt(colors.primary.substring(1, 3), 16)}, ${Number.parseInt(colors.primary.substring(3, 5), 16)}, ${Number.parseInt(colors.primary.substring(5, 7), 16)}, 0.06)`,
+                    padding: spacing[8],
+                    borderRadius: '50%',
+                    background: session.type === 'online' ? '#e3f0ff' : '#e3ffe3',
                   }}
                 >
-                  {session.status === 'attend' ? '✓ Attend' : '✗ Absent'}
-                </span>
+                  {session.type === 'online' ? (
+                    <Video style={{ width: '20px', height: '20px', color: '#2196f3' }} />
+                  ) : (
+                    <MapPin style={{ width: '20px', height: '20px', color: '#34c759' }} />
+                  )}
+                </div>
+                <div>
+                  <p style={{ fontWeight: typography.fontWeight.normal, color: colors.text.primary, fontSize: typography.fontSize.lg }}>
+                    {session.name}
+                  </p>
+                  <p style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>
+                    {session.time} - {session.location}
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
+              <span
+                style={{
+                  border: `1px solid ${session.status === 'attend' ? '#34c759' : colors.primary}`,
+                  color: session.status === 'attend' ? '#34c759' : colors.primary,
+                  borderRadius: borderRadius.lg,
+                  padding: `${spacing[4]} ${spacing[14]}`,
+                  fontWeight: typography.fontWeight.semibold,
+                  fontSize: typography.fontSize.base,
+                  background: session.status === 'attend' ? 'rgba(52,199,89,0.08)' : `rgba(${Number.parseInt(colors.primary.substring(1, 3), 16)}, ${Number.parseInt(colors.primary.substring(3, 5), 16)}, ${Number.parseInt(colors.primary.substring(5, 7), 16)}, 0.06)`,
+                }}
+              >
+                {session.status === 'attend' ? '✓ Attend' : '✗ Absent'}
+              </span>
+            </div>
+          ))}
+        </div>
         </section>
 
         {/* Payment Tracker Section */}
-        <section className="space-y-4">
-          <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Payment Tracker</h2>
-          <div
+        <section className="space-y-4" style={{ marginBottom: spacing[32] }}>
+        <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Payment Tracker</h2>
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.72)',
+            borderRadius: borderRadius['2xl'],
+            boxShadow: shadows.sm,
+            padding: spacing[18],
+            border: '0.5px solid rgba(0,0,0,0.04)',
+          }}
+        >
+          {payments.map((payment) => (
+            <div
+              key={payment.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: spacing[12],
+                borderRadius: borderRadius.lg,
+                background: 'rgba(255,255,255,0.92)',
+                marginBottom: spacing[8],
+                boxShadow: shadows.xs,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[12] }}>
+                <Avatar
+                  style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.72)' }}
+                >
+                  <AvatarImage src={payment.avatar} />
+                  <AvatarFallback>{payment.name[0]}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p style={{ fontWeight: typography.fontWeight.normal, color: colors.text.primary, fontSize: typography.fontSize.lg }}>
+                    {payment.name}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: typography.fontSize.sm,
+                      color: payment.status === 'pending'
+                        ? '#ff9800'
+                        : payment.status === 'overdue'
+                          ? '#f44336'
+                          : '#34c759',
+                      fontWeight: typography.fontWeight.semibold,
+                    }}
+                  >
+                    {payment.amount}{' '}
+                    {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                  </p>
+                </div>
+              </div>
+              <span>{getPaymentStatusIcon(payment.status)}</span>
+            </div>
+          ))}
+        </div>
+        </section>
+
+        {/* Messages Section */}
+        <section className="space-y-4" style={{ marginBottom: spacing[32] }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Messages</h2>
+          <button
             style={{
-              background: 'rgba(255,255,255,0.72)',
-              borderRadius: borderRadius['2xl'],
-              boxShadow: shadows.sm,
-              padding: spacing[18],
-              border: '0.5px solid rgba(0,0,0,0.04)',
+              background: 'none',
+              border: 'none',
+              color: colors.primary,
+              fontWeight: typography.fontWeight.semibold,
+              fontSize: typography.fontSize.base,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
             }}
           >
-            {payments.map((payment) => (
-              <div
-                key={payment.id}
+            View All
+          </button>
+        </div>
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.72)',
+            borderRadius: borderRadius['2xl'],
+            boxShadow: shadows.sm,
+            padding: spacing[18],
+            border: '0.5px solid rgba(0,0,0,0.04)',
+          }}
+        >
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[12],
+                padding: spacing[12],
+                borderRadius: borderRadius.lg,
+                background: 'rgba(255,255,255,0.92)',
+                marginBottom: spacing[8],
+                boxShadow: shadows.xs,
+              }}
+            >
+              <Avatar
+                style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.72)' }}
+              >
+                <AvatarImage src={msg.avatar} />
+                <AvatarFallback>{msg.name[0]}</AvatarFallback>
+              </Avatar>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontWeight: typography.fontWeight.normal, color: colors.text.primary, fontSize: typography.fontSize.lg }}>{msg.name}</p>
+                <p
+                  style={{
+                    fontSize: typography.fontSize.sm,
+                    color: colors.text.secondary,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {msg.message}
+                </p>
+              </div>
+              <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, whiteSpace: 'nowrap' }}>
+                {msg.time}
+              </span>
+            </div>
+          ))}
+        </div>
+        </section>
+      </div>
+
+      {/* Likes Modal */}
+      {showLikesModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            padding: spacing[16],
+          }}
+          onClick={() => setShowLikesModal(null)}
+        >
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderRadius: borderRadius['2xl'],
+              boxShadow: shadows.xl,
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '600px',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: spacing[20],
+                borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <h3
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: spacing[12],
-                  borderRadius: borderRadius.lg,
-                  background: 'rgba(255,255,255,0.92)',
-                  marginBottom: spacing[8],
-                  boxShadow: shadows.xs,
+                  fontSize: typography.fontSize.xl,
+                  fontWeight: typography.fontWeight.bold,
+                  color: colors.text.primary,
+                  margin: 0,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[12] }}>
-                  <Avatar
-                    style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.72)' }}
-                  >
-                    <AvatarImage src={payment.avatar} />
-                    <AvatarFallback>{payment.name[0]}</AvatarFallback>
+                Likes
+              </h3>
+              <button
+                onClick={() => setShowLikesModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: spacing[8],
+                  borderRadius: borderRadius.lg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: transitions.fast,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'none';
+                }}
+              >
+                <span style={{ fontSize: '24px', color: colors.text.secondary }}>×</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div
+              style={{
+                padding: spacing[16],
+                overflowY: 'auto',
+                flex: 1,
+              }}
+            >
+              {postLikes[showLikesModal]?.map((like) => (
+                <div
+                  key={like.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing[12],
+                    padding: spacing[12],
+                    borderRadius: borderRadius.lg,
+                    marginBottom: spacing[8],
+                    transition: transitions.fast,
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.03)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <Avatar style={{ width: '48px', height: '48px' }}>
+                    <AvatarImage src={like.avatar} />
+                    <AvatarFallback>{like.name[0]}</AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p style={{ fontWeight: typography.fontWeight.normal, color: colors.text.primary, fontSize: typography.fontSize.lg }}>
-                      {payment.name}
+                  <div style={{ flex: 1 }}>
+                    <p
+                      style={{
+                        fontWeight: typography.fontWeight.semibold,
+                        color: colors.text.primary,
+                        fontSize: typography.fontSize.base,
+                        margin: 0,
+                      }}
+                    >
+                      {like.name}
                     </p>
                     <p
                       style={{
                         fontSize: typography.fontSize.sm,
-                        color:
-                          payment.status === 'pending'
-                            ? '#ff9800'
-                            : payment.status === 'overdue'
-                              ? '#f44336'
-                              : '#34c759',
-                        fontWeight: typography.fontWeight.semibold,
+                        color: colors.text.secondary,
+                        margin: 0,
                       }}
                     >
-                      {payment.amount}{' '}
-                      {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                      {like.time}
+                    </p>
+                  </div>
+                  <Heart
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      color: colors.primary,
+                      fill: colors.primary,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comments Modal */}
+      {showCommentsModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            padding: spacing[16],
+          }}
+          onClick={() => setShowCommentsModal(null)}
+        >
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderRadius: borderRadius['2xl'],
+              boxShadow: shadows.xl,
+              maxWidth: '600px',
+              width: '100%',
+              maxHeight: '700px',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: spacing[20],
+                borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: typography.fontSize.xl,
+                  fontWeight: typography.fontWeight.bold,
+                  color: colors.text.primary,
+                  margin: 0,
+                }}
+              >
+                Comments
+              </h3>
+              <button
+                onClick={() => setShowCommentsModal(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: spacing[8],
+                  borderRadius: borderRadius.lg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: transitions.fast,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'none';
+                }}
+              >
+                <span style={{ fontSize: '24px', color: colors.text.secondary }}>×</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div
+              style={{
+                padding: spacing[16],
+                overflowY: 'auto',
+                flex: 1,
+              }}
+            >
+              {postComments[showCommentsModal]?.map((comment) => (
+                <div
+                  key={comment.id}
+                  style={{
+                    display: 'flex',
+                    gap: spacing[12],
+                    padding: spacing[12],
+                    borderRadius: borderRadius.lg,
+                    marginBottom: spacing[12],
+                    transition: transitions.fast,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.02)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <Avatar style={{ width: '40px', height: '40px', flexShrink: 0 }}>
+                    <AvatarImage src={comment.avatar} />
+                    <AvatarFallback>{comment.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        background: 'rgba(0, 0, 0, 0.04)',
+                        borderRadius: borderRadius.lg,
+                        padding: spacing[12],
+                        marginBottom: spacing[4],
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontWeight: typography.fontWeight.semibold,
+                          color: colors.text.primary,
+                          fontSize: typography.fontSize.sm,
+                          margin: 0,
+                          marginBottom: spacing[4],
+                        }}
+                      >
+                        {comment.name}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: typography.fontSize.base,
+                          color: colors.text.primary,
+                          margin: 0,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {comment.message}
+                      </p>
+                    </div>
+                    <p
+                      style={{
+                        fontSize: typography.fontSize.xs,
+                        color: colors.text.secondary,
+                        margin: 0,
+                        paddingLeft: spacing[12],
+                      }}
+                    >
+                      {comment.time}
                     </p>
                   </div>
                 </div>
-                <span>{getPaymentStatusIcon(payment.status)}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </section>
-
-        {/* Messages Section */}
-        <section className="space-y-4">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ fontSize: typography.fontSize['4xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Messages</h2>
-            <button
-              style={{
-                background: 'none',
-                border: 'none',
-                color: colors.primary,
-                fontWeight: typography.fontWeight.semibold,
-                fontSize: typography.fontSize.base,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              View All
-            </button>
-          </div>
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.72)',
-              borderRadius: borderRadius['2xl'],
-              boxShadow: shadows.sm,
-              padding: spacing[18],
-              border: '0.5px solid rgba(0,0,0,0.04)',
-            }}
-          >
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[12],
-                  padding: spacing[12],
-                  borderRadius: borderRadius.lg,
-                  background: 'rgba(255,255,255,0.92)',
-                  marginBottom: spacing[8],
-                  boxShadow: shadows.xs,
-                }}
-              >
-                <Avatar
-                  style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.72)' }}
-                >
-                  <AvatarImage src={msg.avatar} />
-                  <AvatarFallback>{msg.name[0]}</AvatarFallback>
-                </Avatar>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: typography.fontWeight.normal, color: colors.text.primary, fontSize: typography.fontSize.lg }}>{msg.name}</p>
-                  <p
-                    style={{
-                      fontSize: typography.fontSize.sm,
-                      color: colors.text.secondary,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {msg.message}
-                  </p>
-                </div>
-                <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary, whiteSpace: 'nowrap' }}>
-                  {msg.time}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <Footer />
-
+        </div>
+      )}
+      
       {/* Footer Navigation */}
       <div
         style={{
@@ -958,10 +1356,8 @@ const CoachHome = () => {
           boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.03)',
         }}
       >
-        {/* Footer icons: Home, Revenue, User (last icon is not clickable) */}
         <button
-          key="/coach"
-          onClick={() => { globalThis.location.href = '/coach'; }}
+          onClick={() => { globalThis.location.href = '/coach-home'; }}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -972,7 +1368,7 @@ const CoachHome = () => {
             padding: '12px',
             borderRadius: '12px',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            color: globalThis.location.pathname === '/coach' ? '#ff3c20' : '#1d1d1f',
+            color: globalThis.location.pathname === '/coach-home' ? '#ff3c20' : '#1d1d1f',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
@@ -983,10 +1379,9 @@ const CoachHome = () => {
             e.currentTarget.style.background = 'transparent';
           }}
         >
-          <Home style={{ width: 18, height: 18, strokeWidth: 1.5, color: globalThis.location.pathname === '/coach' ? '#ff3c20' : '#1d1d1f' }} />
+          <Home style={{ width: '18px', height: '18px', strokeWidth: 1.5 }} />
         </button>
         <button
-          key="/revenue"
           onClick={() => { globalThis.location.href = '/revenue'; }}
           style={{
             display: 'flex',
@@ -1009,10 +1404,34 @@ const CoachHome = () => {
             e.currentTarget.style.background = 'transparent';
           }}
         >
-          <Star style={{ width: 18, height: 18, strokeWidth: 1.5, color: globalThis.location.pathname === '/revenue' ? '#ffb300' : '#1d1d1f' }} />
+          <LayoutDashboard style={{ width: '18px', height: '18px', strokeWidth: 1.5 }} />
         </button>
         <button
-          key="/testimonials"
+          onClick={() => { globalThis.location.href = '/client/1'; }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '12px',
+            borderRadius: '12px',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            color: globalThis.location.pathname.startsWith('/client/') ? '#ff3c20' : '#1d1d1f',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.background = 'rgba(255, 60, 32, 0.08)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          <LayoutDashboard style={{ width: '18px', height: '18px', strokeWidth: 1.5 }} />
+        </button>
+        <button
           onClick={() => { globalThis.location.href = '/testimonials'; }}
           style={{
             display: 'flex',
@@ -1035,10 +1454,10 @@ const CoachHome = () => {
             e.currentTarget.style.background = 'transparent';
           }}
         >
-          <MessageCircle style={{ width: 18, height: 18, strokeWidth: 1.5, color: globalThis.location.pathname === '/testimonials' ? '#ff3c20' : '#1d1d1f' }} />
+          <MessageCircle style={{ width: '18px', height: '18px', strokeWidth: 1.5 }} />
         </button>
-      </div
-      >
+      </div>
+      <CoachFooter />
     </main>
   );
 };

@@ -32,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/Footer';
@@ -40,6 +41,15 @@ import Footer from '@/components/Footer';
 
 
 const Index = () => {
+  // Show messages sent by coach/dietician to this user (client)
+  const [userMessages, setUserMessages] = useState<Array<{ message: string; from: string; date: string }>>([]);
+  useEffect(() => {
+    // Assume user id is 1 for demo; replace with actual user id if available
+    const clientId = 1;
+    const allMessages = JSON.parse(localStorage.getItem('userMessages') || '[]');
+    const filtered = allMessages.filter((msg: any) => msg.clientId === clientId);
+    setUserMessages(filtered);
+  }, []);
   // Coach Note for display
   const [coachNote, setCoachNote] = useState<string>(() => localStorage.getItem('coachNote') || '');
   useEffect(() => {
@@ -157,6 +167,9 @@ const Index = () => {
   const [editCaption, setEditCaption] = useState('');
   const [editWorkout, setEditWorkout] = useState('');
   const workoutFileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
+  // State for showing likes and comments modals
+  const [showLikesModal, setShowLikesModal] = useState<number | null>(null);
+  const [showCommentsModal, setShowCommentsModal] = useState<number | null>(null);
 
   const handleWorkoutImageChange = (postId: number, file: File) => {
     const reader = new FileReader();
@@ -292,6 +305,46 @@ const Index = () => {
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
+
+  // Mock data for likes and comments
+  const postLikes: { [key: number]: Array<{ id: number; name: string; avatar: string; time: string }> } = {
+    1: [
+      { id: 1, name: 'Sarah Johnson', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', time: '2h ago' },
+      { id: 2, name: 'Mike Chen', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', time: '5h ago' },
+      { id: 3, name: 'Emma Wilson', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80', time: '1d ago' },
+    ],
+    2: [
+      { id: 1, name: 'David Lee', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80', time: '1h ago' },
+      { id: 2, name: 'Lisa Brown', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', time: '3h ago' },
+    ],
+    3: [
+      { id: 1, name: 'John Smith', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80', time: '30m ago' },
+      { id: 2, name: 'Anna Davis', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80', time: '2h ago' },
+      { id: 3, name: 'Tom Wilson', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', time: '4h ago' },
+    ],
+    4: [
+      { id: 1, name: 'Rachel Green', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', time: '1h ago' },
+      { id: 2, name: 'Chris Martin', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80', time: '6h ago' },
+    ],
+  };
+
+  const postComments: { [key: number]: Array<{ id: number; name: string; avatar: string; message: string; time: string }> } = {
+    1: [
+      { id: 1, name: 'Sarah Johnson', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', message: 'Amazing workout! Keep it up! 💪', time: '2h ago' },
+      { id: 2, name: 'Mike Chen', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', message: 'This is so inspiring! Can you share the routine?', time: '5h ago' },
+    ],
+    2: [
+      { id: 1, name: 'David Lee', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80', message: 'Great form! 🔥', time: '1h ago' },
+    ],
+    3: [
+      { id: 1, name: 'John Smith', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80', message: 'Incredible transformation! How long did this take?', time: '30m ago' },
+      { id: 2, name: 'Anna Davis', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80', message: 'You\'re such an inspiration! 🙌', time: '2h ago' },
+      { id: 3, name: 'Tom Wilson', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', message: 'Would love to train with you!', time: '4h ago' },
+    ],
+    4: [
+      { id: 1, name: 'Rachel Green', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80', message: 'Perfect yoga session! 🧘', time: '1h ago' },
+    ],
+  };
 
   const dietPlan = {
     breakfast: {
@@ -585,6 +638,45 @@ const Index = () => {
         </section>
       )}
 
+      {/* Messages from Coach/Dietician */}
+      {userMessages.length > 0 && (
+        <section
+          style={{
+            margin: '0 auto 32px',
+            maxWidth: '700px',
+            background: 'linear-gradient(135deg, #f5faff 60%, #fff)',
+            borderRadius: '18px',
+            boxShadow: '0 2px 12px rgba(32,120,255,0.07)',
+            border: '1px solid #e0f0ff',
+            padding: '28px 32px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <h3 style={{ color: '#2078ff', fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>Messages from Coach/Dietician</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {userMessages.map((msg, idx) => (
+              <div key={idx} style={{
+                background: '#fff',
+                borderRadius: '12px',
+                padding: '16px',
+                boxShadow: '0 1px 4px rgba(32,120,255,0.04)',
+                border: '1px solid #e0f0ff',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+              }}>
+                <div style={{ fontSize: '15px', color: '#1d1d1f', fontWeight: 500 }}>{msg.message}</div>
+                <div style={{ fontSize: '12px', color: '#6e6e73', fontStyle: 'italic' }}>
+                  {msg.from === 'coach' ? 'Coach' : 'Dietician'} • {new Date(msg.date).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Main Content Grid */}
       <div
         style={{
@@ -853,14 +945,56 @@ const Index = () => {
                         marginTop: 'auto',
                       }}
                     >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <button
+                        onClick={() => setShowLikesModal(post.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#6e6e73',
+                          fontSize: '14px',
+                          padding: 0,
+                          fontFamily: 'inherit',
+                          transition: 'color 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = '#ff3c20';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = '#6e6e73';
+                        }}
+                      >
                         <Heart style={{ width: '16px', height: '16px' }} />
                         {post.likes}
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      </button>
+                      <button
+                        onClick={() => setShowCommentsModal(post.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: '#6e6e73',
+                          fontSize: '14px',
+                          padding: 0,
+                          fontFamily: 'inherit',
+                          transition: 'color 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = '#ff3c20';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = '#6e6e73';
+                        }}
+                      >
                         <MessageCircle style={{ width: '16px', height: '16px' }} />
                         {post.comments}
-                      </span>
+                      </button>
                       <span
                         style={{
                           display: 'flex',
@@ -1813,6 +1947,183 @@ const Index = () => {
             >
               Save Changes
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Likes Modal */}
+      <Dialog open={showLikesModal !== null} onOpenChange={() => setShowLikesModal(null)}>
+        <DialogContent
+          style={{
+            maxWidth: '500px',
+            background: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+            padding: '32px',
+            maxHeight: '70vh',
+            overflowY: 'auto',
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle
+              style={{
+                fontSize: '24px',
+                fontWeight: '700',
+                color: '#1d1d1f',
+                marginBottom: '8px',
+              }}
+            >
+              Likes
+            </DialogTitle>
+            <DialogClose style={{ display: 'none' }} />
+            <button
+              onClick={() => setShowLikesModal(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'none';
+              }}
+            >
+              <span style={{ fontSize: '24px', color: '#6e6e73' }}>×</span>
+            </button>
+          </DialogHeader>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '24px' }}>
+            {showLikesModal && postLikes[showLikesModal]?.map((like) => (
+              <div
+                key={like.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.5)',
+                  border: '1px solid rgba(0, 0, 0, 0.05)',
+                }}
+              >
+                <Avatar style={{ width: '40px', height: '40px' }}>
+                  <AvatarImage src={like.avatar} />
+                  <AvatarFallback>{like.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: '15px', fontWeight: '600', color: '#1d1d1f' }}>
+                    {like.name}
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#6e6e73' }}>
+                    {like.time}
+                  </p>
+                </div>
+                <Heart style={{ width: '16px', height: '16px', color: '#ff3c20', fill: '#ff3c20' }} />
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Comments Modal */}
+      <Dialog open={showCommentsModal !== null} onOpenChange={() => setShowCommentsModal(null)}>
+        <DialogContent
+          style={{
+            maxWidth: '600px',
+            background: 'rgba(255, 255, 255, 0.98)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+            padding: '32px',
+            maxHeight: '70vh',
+            overflowY: 'auto',
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle
+              style={{
+                fontSize: '24px',
+                fontWeight: '700',
+                color: '#1d1d1f',
+                marginBottom: '8px',
+              }}
+            >
+              Comments
+            </DialogTitle>
+            <DialogClose style={{ display: 'none' }} />
+            <button
+              onClick={() => setShowCommentsModal(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'none';
+              }}
+            >
+              <span style={{ fontSize: '24px', color: '#6e6e73' }}>×</span>
+            </button>
+          </DialogHeader>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '24px' }}>
+            {showCommentsModal && postComments[showCommentsModal]?.map((comment) => (
+              <div
+                key={comment.id}
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.5)',
+                  border: '1px solid rgba(0, 0, 0, 0.05)',
+                }}
+              >
+                <Avatar style={{ width: '40px', height: '40px', flexShrink: 0 }}>
+                  <AvatarImage src={comment.avatar} />
+                  <AvatarFallback>{comment.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                </Avatar>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <p style={{ fontSize: '14px', fontWeight: '600', color: '#1d1d1f' }}>
+                      {comment.name}
+                    </p>
+                    <p style={{ fontSize: '12px', color: '#6e6e73' }}>
+                      {comment.time}
+                    </p>
+                  </div>
+                  <p style={{ fontSize: '14px', color: '#1d1d1f', lineHeight: '1.4' }}>
+                    {comment.message}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </DialogContent>
       </Dialog>

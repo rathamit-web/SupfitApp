@@ -1,0 +1,294 @@
+import React, { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { saveSubscription } from '../lib/subscriptionStorage';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, FlatList, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
+
+interface GymPackage {
+  id: number;
+  name: string;
+  duration: string;
+  monthlyPrice: string;
+  yearlyPrice: string;
+  features: string[];
+}
+
+interface Gym {
+  id: number;
+  name: string;
+  distance: string;
+  rating: number;
+  reviews: number;
+  image: string;
+  address: string;
+  amenities: string[];
+  packages: GymPackage[];
+}
+
+const gyms: Gym[] = [
+  {
+    id: 1,
+    name: 'PowerFit Gym',
+    distance: '0.8 km',
+    rating: 4.8,
+    reviews: 234,
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80',
+    address: 'Sector 18, Noida',
+    amenities: ['AC', 'WiFi', 'Parking', 'Lockers', 'Shower'],
+    packages: [
+      {
+        id: 1,
+        name: 'Basic',
+        duration: '1 Month',
+        monthlyPrice: '₹1,999',
+        yearlyPrice: '₹19,999',
+        features: ['All Equipment Access', 'Locker Facility', 'Free WiFi'],
+      },
+      {
+        id: 2,
+        name: 'Standard',
+        duration: '3 Months',
+        monthlyPrice: '₹1,799',
+        yearlyPrice: '₹17,999',
+        features: ['All Equipment Access', 'Locker Facility', 'Free WiFi', '1 Free PT Session'],
+      },
+      {
+        id: 3,
+        name: 'Premium',
+        duration: '12 Months',
+        monthlyPrice: '₹1,499',
+        yearlyPrice: '₹14,999',
+        features: [
+          'All Equipment Access',
+          'Locker Facility',
+          'Free WiFi',
+          '5 Free PT Sessions',
+          'Diet Plan',
+        ],
+      },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Elite Fitness Center',
+    distance: '1.2 km',
+    rating: 4.6,
+    reviews: 189,
+    image: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80',
+    address: 'Sector 62, Noida',
+    amenities: ['AC', 'Sauna', 'Steam', 'Parking', 'Cafe'],
+    packages: [
+      {
+        id: 1,
+        name: 'Standard',
+        duration: '1 Month',
+        monthlyPrice: '₹2,499',
+        yearlyPrice: '₹24,999',
+        features: ['All Equipment Access', 'Steam & Sauna', 'Locker Facility'],
+      },
+      {
+        id: 2,
+        name: 'Premium',
+        duration: '6 Months',
+        monthlyPrice: '₹2,199',
+        yearlyPrice: '₹21,999',
+        features: [
+          'All Equipment Access',
+          'Steam & Sauna',
+          'Locker Facility',
+          '3 Free PT Sessions',
+          'Supplements Discount',
+        ],
+      },
+    ],
+  },
+  {
+    id: 3,
+    name: 'FitZone Pro',
+    distance: '2.0 km',
+    rating: 4.9,
+    reviews: 312,
+    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
+    address: 'Sector 15, Noida',
+    amenities: ['AC', 'WiFi', 'Parking', 'Pool', 'Spa', 'Cafe'],
+    packages: [
+      {
+        id: 1,
+        name: 'Premium',
+        duration: '1 Month',
+        monthlyPrice: '₹3,499',
+        yearlyPrice: '₹34,999',
+        features: ['All Equipment Access', 'Swimming Pool', 'Spa Access', 'Locker & Towel'],
+      },
+      {
+        id: 2,
+        name: 'Elite',
+        duration: '12 Months',
+        monthlyPrice: '₹2,999',
+        yearlyPrice: '₹29,999',
+        features: [
+          'All Equipment Access',
+          'Swimming Pool',
+          'Spa Access',
+          'Locker & Towel',
+          '10 Free PT Sessions',
+          'Nutrition Counseling',
+          'Guest Passes',
+        ],
+      },
+    ],
+  },
+];
+
+const SelectGymNative = () => {
+  const navigation = useNavigation();
+  const [selectedGym, setSelectedGym] = useState<number | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSelectGym = (gymId: number) => {
+    setSelectedGym(gymId);
+    setSelectedPackage(null);
+  };
+
+  const handleSelectPackage = (packageId: number) => {
+    setSelectedPackage(packageId);
+  };
+
+  const handleSubscribe = () => {
+    if (!selectedGym || !selectedPackage) return;
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentConfirm = async () => {
+    if (!selectedGym || !selectedPackage) return;
+    setIsProcessing(true);
+    const gym = gyms.find(g => g.id === selectedGym);
+    const pkg = gym?.packages.find(p => p.id === selectedPackage);
+    // Save to AsyncStorage
+    await saveSubscription('gym', {
+      name: gym?.name,
+      status: 'paid',
+      amount: pkg?.monthlyPrice || pkg?.yearlyPrice,
+      validUpto: '2025-12-31', // Example, should be calculated
+      packageName: pkg?.name,
+    });
+    setTimeout(() => {
+      setIsProcessing(false);
+      setShowPaymentModal(false);
+      navigation.goBack();
+    }, 800);
+  };
+
+  return (
+    <LinearGradient colors={["#f8f9fa", "#f5f5f7"]} style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Select Your Gym</Text>
+        {gyms.map((gym) => (
+          <View key={gym.id} style={[styles.card, selectedGym === gym.id && styles.cardSelected]}>
+            <TouchableOpacity onPress={() => handleSelectGym(gym.id)} activeOpacity={0.85} style={{ flexDirection: 'row' }}>
+              <Image source={{ uri: gym.image }} style={styles.gymImage} />
+              <View style={{ flex: 1, marginLeft: 16 }}>
+                <Text style={styles.gymName}>{gym.name}</Text>
+                <Text style={styles.gymMeta}>{gym.address} • {gym.distance}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                  <MaterialIcons name="star" size={18} color="#ffb300" />
+                  <Text style={styles.gymRating}>{gym.rating}</Text>
+                  <Text style={styles.gymReviews}>({gym.reviews} reviews)</Text>
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
+                  {gym.amenities.map((a) => (
+                    <View key={a} style={styles.amenityTag}>
+                      <Text style={styles.amenityText}>{a}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </TouchableOpacity>
+            {selectedGym === gym.id && (
+              <View style={styles.packagesWrap}>
+                <Text style={styles.packagesTitle}>Packages</Text>
+                {gym.packages.map((pkg) => (
+                  <TouchableOpacity
+                    key={pkg.id}
+                    style={[styles.packageCard, selectedPackage === pkg.id && styles.packageCardSelected]}
+                    onPress={() => handleSelectPackage(pkg.id)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.packageName}>{pkg.name} ({pkg.duration})</Text>
+                    <Text style={styles.packagePrice}>Monthly: {pkg.monthlyPrice} | Yearly: {pkg.yearlyPrice}</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
+                      {pkg.features.map((f) => (
+                        <View key={f} style={styles.featureTag}>
+                          <Text style={styles.featureText}>{f}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={[styles.subscribeBtn, (!selectedPackage || isProcessing) && styles.subscribeBtnDisabled]}
+                  onPress={handleSubscribe}
+                  disabled={!selectedPackage || isProcessing}
+                >
+                  <Text style={styles.subscribeBtnText}>{isProcessing ? 'Processing...' : 'Subscribe'}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+      <Modal visible={showPaymentModal} transparent animationType="slide" onRequestClose={() => setShowPaymentModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirm Payment</Text>
+            <Text style={styles.modalDesc}>Proceed to pay and activate your subscription.</Text>
+            <TouchableOpacity style={styles.confirmBtn} onPress={handlePaymentConfirm} disabled={isProcessing}>
+              <Text style={styles.confirmBtnText}>{isProcessing ? 'Processing...' : 'Pay & Subscribe'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowPaymentModal(false)} disabled={isProcessing}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </LinearGradient>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { padding: 24, paddingBottom: 48 },
+  title: { fontSize: 26, fontWeight: '700', color: '#1d1d1f', marginBottom: 18, textAlign: 'center' },
+  card: { backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 18, marginBottom: 18, padding: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+  cardSelected: { borderWidth: 2, borderColor: '#ff3c20' },
+  gymImage: { width: 100, height: 100, borderRadius: 14, backgroundColor: '#eee' },
+  gymName: { fontSize: 18, fontWeight: '700', color: '#1d1d1f' },
+  gymMeta: { fontSize: 13, color: '#6e6e73', marginTop: 2 },
+  gymRating: { fontSize: 15, fontWeight: '700', color: '#ffb300', marginLeft: 4 },
+  gymReviews: { fontSize: 12, color: '#6e6e73', marginLeft: 4 },
+  amenityTag: { backgroundColor: 'rgba(32,120,255,0.08)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, marginRight: 6, marginBottom: 4 },
+  amenityText: { fontSize: 12, color: '#2078ff' },
+  packagesWrap: { marginTop: 16, backgroundColor: 'rgba(245,245,247,0.95)', borderRadius: 14, padding: 14 },
+  packagesTitle: { fontSize: 16, fontWeight: '700', color: '#1d1d1f', marginBottom: 8 },
+  packageCard: { backgroundColor: '#fff', borderRadius: 10, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: '#eee' },
+  packageCardSelected: { borderColor: '#ff3c20', borderWidth: 2 },
+  packageName: { fontSize: 15, fontWeight: '700', color: '#1d1d1f' },
+  packagePrice: { fontSize: 13, color: '#6e6e73', marginTop: 2 },
+  featureTag: { backgroundColor: 'rgba(255,60,32,0.08)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, marginRight: 6, marginBottom: 4 },
+  featureText: { fontSize: 12, color: '#ff3c20' },
+  subscribeBtn: { backgroundColor: '#ff3c20', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 10 },
+  subscribeBtnDisabled: { backgroundColor: '#ffb3a1' },
+  subscribeBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.18)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#fff', borderRadius: 18, padding: 28, width: '85%', alignItems: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1d1d1f', marginBottom: 8 },
+  modalDesc: { fontSize: 15, color: '#6e6e73', marginBottom: 18, textAlign: 'center' },
+  confirmBtn: { backgroundColor: '#ff3c20', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 32, alignItems: 'center', marginBottom: 10 },
+  confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  cancelBtn: { backgroundColor: '#eee', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 32, alignItems: 'center' },
+  cancelBtnText: { color: '#1d1d1f', fontWeight: '600', fontSize: 15 },
+});
+
+export default SelectGymNative;

@@ -2,7 +2,8 @@ import { useState } from 'react';
 
 // Removed unused Card, CardContent import
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Home, Users, User, MessageCircle } from 'lucide-react';
+import { Users } from 'lucide-react';
+import CoachFooter from '@/components/CoachFooter';
 import RevenueTrackerIcon from '@/components/RevenueTrackerIcon';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 // Footer replaced with inline navigation below
@@ -25,19 +26,17 @@ const RevenueTracker = () => {
   const stats = [
     {
       label: 'Total Revenue',
-      value: '₹67,322',
-      change: '+32% this month',
-      changeColor: 'text-green-500',
+      value: '₹6,222',
+      change: '+2% this month',
+      changeColor: 'green',
       icon: RevenueTrackerIcon,
     },
     {
       label: 'Active Clients',
       value: '48',
-      change: '+17%',
-      changeColor: 'text-green-500',
+      newClients: 7,
+      dropOffs: 2,
       icon: Users,
-      newClients: 7, // Example value
-      dropOffs: 2,   // Example value
     },
   ];
 
@@ -56,10 +55,6 @@ const RevenueTracker = () => {
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
     },
   ];
-
-  // Removed unused packagePopularity
-
-  // Removed unused paymentMethods
 
   return (
     <main
@@ -85,199 +80,170 @@ const RevenueTracker = () => {
             Revenue Tracker
           </h1>
 
-          {/* Stats Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: spacing[16], marginBottom: spacing[32] }}>
-            {stats.map((stat, idx) => {
-              const Icon = stat.icon;
-              // Active Clients palette (second)
-              if (idx === 1) {
-                return (
-                  <div
-                    key={stat.label}
-                    style={{
-                      background: colors.glass.light,
-                      borderRadius: borderRadius.xl,
-                      boxShadow: shadows.lg,
-                      padding: spacing[12], // reduced padding
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: spacing[4], // reduced gap
-                      alignItems: 'flex-start',
-                      border: '1px solid rgba(0,0,0,0.06)',
-                      transition: transitions.normal,
-                      minWidth: 0,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4] }}>
-                      <Icon style={{ width: 18, height: 18, color: colors.primary }} />
-                      <span style={{ fontSize: typography.fontSize.xs, color: colors.text.secondary }}>{stat.label}</span>
-                    </div>
-                    <span style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>{stat.value}</span>
-                    {stat.change && (() => {
-                      let color = colors.text.secondary;
-                      if (stat.changeColor === 'text-green-500') color = colors.success;
-                      else if (stat.changeColor === 'text-red-500') color = colors.error;
-                      return (
-                        <span style={{ fontSize: typography.fontSize.xs, color }}>{stat.change}</span>
-                      );
-                    })()}
-                    <div style={{ marginTop: 4 }}>
-                      <span style={{ fontSize: typography.fontSize.xs, color: colors.success, fontWeight: 500 }}>
-                        +{stat.newClients} New this month
-                      </span>
-                      <br />
-                      <span style={{ fontSize: typography.fontSize.xs, color: colors.error, fontWeight: 500 }}>
-                        {stat.dropOffs} Drop-offs/Cancellations
-                      </span>
-                    </div>
-                  </div>
-                );
-              }
-              // Total Session Booking palette (third)
-              // (Removed: No stat at idx 2, and no popularSlots property)
-              // Default palette
-              return (
-                <div
-                  key={stat.label}
-                  style={{
-                    background: colors.glass.light,
-                    borderRadius: borderRadius.xl,
-                    boxShadow: shadows.lg,
-                    padding: spacing[24],
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: spacing[8],
-                    alignItems: 'flex-start',
-                    border: '1px solid rgba(0,0,0,0.06)',
-                    transition: transitions.normal,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[8] }}>
-                    <Icon style={{ width: 22, height: 22, color: colors.primary }} />
-                    <span style={{ fontSize: typography.fontSize.sm, color: colors.text.secondary }}>{stat.label}</span>
-                  </div>
-                  <span style={{ fontSize: typography.fontSize['2xl'], fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>{stat.value}</span>
-                  {stat.change && (() => {
-                    let color = colors.text.secondary;
-                    if (stat.changeColor === 'text-green-500') color = colors.success;
-                    else if (stat.changeColor === 'text-red-500') color = colors.error;
-                    return (
-                      <span style={{ fontSize: typography.fontSize.xs, color }}>{stat.change}</span>
-                    );
-                  })()}
-                </div>
-              );
-            })}
+          {/* Screenshot-matching Stat Palettes */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: spacing[24] }}>
+            {/* Total Revenue Card - compact */}
+            <div style={{ display: 'flex', borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 8px rgba(255,60,32,0.07)', minHeight: 78 }}>
+              <div style={{ background: colors.primary, width: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{
+                  fontFamily: 'SF Pro Display, Inter, Roboto, Arial, sans-serif',
+                  fontWeight: 900,
+                  fontSize: 32,
+                  color: '#fff',
+                  letterSpacing: '-1px',
+                  display: 'inline-block',
+                  lineHeight: 1,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.10)',
+                  marginTop: 2
+                }}>₹</span>
+              </div>
+              <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#222', marginBottom: 1 }}>Total Revenue</span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: '#222', marginBottom: 6 }}>{stats[0].value}</span>
+                <span style={{
+                  fontSize: 13,
+                  color: '#23a94d',
+                  background: 'rgba(35,169,77,0.12)',
+                  borderRadius: 8,
+                  padding: '2px 10px',
+                  fontWeight: 600,
+                  display: 'inline-block',
+                  width: 'fit-content',
+                }}>{stats[0].change}</span>
+              </div>
+            </div>
+            {/* Active Clients Card - compact */}
+            <div style={{ display: 'flex', borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 2px 8px rgba(255,60,32,0.07)', minHeight: 78 }}>
+              <div style={{ background: colors.primary, width: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <Users style={{ width: 32, height: 32, color: '#fff' }} />
+                <div style={{ position: 'absolute', right: 10, top: 20, width: 10, height: 10, background: '#23a94d', borderRadius: '50%', border: '1.5px solid #fff' }} />
+              </div>
+              <div style={{ flex: 1, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#222', marginBottom: 1 }}>Active Clients</span>
+                <span style={{ fontSize: 24, fontWeight: 800, color: '#222', marginBottom: 0 }}>{stats[1].value}
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#23a94d', marginLeft: 8 }}>+{stats[1].newClients} new</span>
+                </span>
+                <span style={{
+                  fontSize: 13,
+                  color: '#fff',
+                  background: colors.primary,
+                  borderRadius: 8,
+                  padding: '2px 10px',
+                  fontWeight: 600,
+                  display: 'inline-block',
+                  width: 'fit-content',
+                  marginTop: 4,
+                }}>+{stats[1].dropOffs} drop-offs</span>
+              </div>
+            </div>
           </div>
 
-          {/* Revenue Chart & 3-Month Comparison */}
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.72)',
-              borderRadius: borderRadius['2xl'],
-              boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-              marginBottom: spacing[32],
-              border: '1px solid rgba(0,0,0,0.06)',
-              padding: spacing[32],
-              backdropFilter: 'blur(24px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Liquid Glass highlight */}
-            <div style={{
-              position: 'absolute',
-              top: '-40px',
-              left: '-40px',
-              width: '180px',
-              height: '180px',
-              background: 'linear-gradient(135deg, #fff 0%, #e0e7ef 100%)',
-              opacity: 0.18,
-              borderRadius: '50%',
-              filter: 'blur(32px)',
-              zIndex: 0,
-            }} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing[16] }}>
-              <h2 style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.text.primary }}> 
-                {viewMode === 'revenue' ? 'Revenue' : 'Active Clients'}
-              </h2>
-              <div style={{ display: 'flex', gap: 8, background: colors.glass.medium, borderRadius: borderRadius.md, padding: '4px', border: '1px solid #eee' }}>
+          {/* Apple-style Glassmorphic Toggle Chart Card */}
+          <div style={{ background: '#fff', borderRadius: 24, boxShadow: '0 2px 12px rgba(255,60,32,0.07)', padding: '32px 32px 24px 32px', marginBottom: spacing[32], maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>
+            {/* Apple Glass Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: 'rgba(255,255,255,0.28)',
+                  borderRadius: 32,
+                  boxShadow: '0 4px 24px 0 rgba(0,0,0,0.08)',
+                  backdropFilter: 'blur(18px) saturate(180%)',
+                  WebkitBackdropFilter: 'blur(18px) saturate(180%)',
+                  border: `1.5px solid rgba(255,255,255,0.45)`,
+                  padding: 4,
+                  position: 'relative',
+                  minWidth: 180,
+                  minHeight: 48,
+                  width: 220,
+                  transition: 'background 0.3s',
+                }}
+              >
+                {/* Sliding pill */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    left: viewMode === 'revenue' ? 4 : 110,
+                    width: 106,
+                    height: 40,
+                    borderRadius: 28,
+                    background: colors.primary,
+                    boxShadow: `0 2px 8px 0 ${colors.primary}22`,
+                    transition: 'left 0.25s cubic-bezier(.4,2,.6,1)',
+                    zIndex: 1,
+                    border: `1.5px solid ${colors.primary}`,
+                    backdropFilter: 'blur(12px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+                  }}
+                />
+                {/* Revenue Button */}
                 <button
                   onClick={() => setViewMode('revenue')}
                   style={{
-                    padding: '6px 16px',
-                    borderRadius: borderRadius.sm,
-                    background: viewMode === 'revenue' ? colors.primary : 'transparent',
-                    color: viewMode === 'revenue' ? '#fff' : colors.text.primary,
-                    fontWeight: 600,
+                    zIndex: 2,
+                    width: 106,
+                    height: 40,
                     border: 'none',
+                    outline: 'none',
+                    background: 'none',
+                    color: viewMode === 'revenue' ? '#fff' : 'rgba(255,255,255,0.7)',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    borderRadius: 28,
                     cursor: 'pointer',
-                    fontSize: typography.fontSize.sm,
-                    transition: 'all 0.2s',
+                    transition: 'color 0.2s',
                   }}
                 >
                   Revenue
                 </button>
+                {/* Clients Button */}
                 <button
                   onClick={() => setViewMode('clients')}
                   style={{
-                    padding: '6px 16px',
-                    borderRadius: borderRadius.sm,
-                    background: viewMode === 'clients' ? colors.primary : 'transparent',
-                    color: viewMode === 'clients' ? '#fff' : colors.text.primary,
-                    fontWeight: 600,
+                    zIndex: 2,
+                    width: 106,
+                    height: 40,
                     border: 'none',
+                    outline: 'none',
+                    background: 'none',
+                    color: viewMode === 'clients' ? '#fff' : 'rgba(255,255,255,0.7)',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    borderRadius: 28,
                     cursor: 'pointer',
-                    fontSize: typography.fontSize.sm,
-                    transition: 'all 0.2s',
+                    transition: 'color 0.2s',
                   }}
                 >
-                  Active Clients
+                  Clients
                 </button>
               </div>
             </div>
-            {/* 3-Month Bar Chart */}
-            <div style={{ width: '100%', maxWidth: 340, margin: '0 auto', marginBottom: spacing[8], zIndex: 1, position: 'relative' }}>
-              <ResponsiveContainer width="100%" height={160}>
+            <div style={{ width: '100%', height: 180, marginBottom: 0 }}>
+              <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={barData} barCategoryGap={40}>
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 16, fill: colors.text.secondary, fontWeight: 600 }} />
-                  <YAxis hide />
-                  <Tooltip 
-                    formatter={(value: number) => viewMode === 'revenue' ? [`₹${value.toLocaleString()}`, 'Revenue'] : [value, 'Clients']}
-                    contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #e0e7ef', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }} 
-                    itemStyle={{ color: colors.primary, fontWeight: 700 }} 
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 18, fill: '#222', fontWeight: 700 }} />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 16, fill: '#bdbdbd', fontWeight: 600 }}
+                    width={60}
+                    tickFormatter={v => viewMode === 'revenue' ? `₹${(v/1000).toFixed(1)}K` : v}
                   />
-                  <Bar 
-                    dataKey={viewMode === 'revenue' ? 'revenue' : 'clients'} 
+                  <Tooltip
+                    formatter={(value: number) => viewMode === 'revenue' ? [`₹${value.toLocaleString()}`, 'Revenue'] : [value, 'Clients']}
+                    contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #e0e7ef', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}
+                    itemStyle={{ color: '#ff7a2f', fontWeight: 700 }}
+                  />
+                  <Bar
+                    dataKey={viewMode === 'revenue' ? 'revenue' : 'clients'}
                     radius={[12, 12, 0, 0]}
-                    label={{
-                      position: 'top',
-                      formatter: (v: number) => viewMode === 'revenue' ? `₹${v.toLocaleString()}` : v,
-                      fill: colors.text.primary,
-                      fontWeight: typography.fontWeight.bold,
-                      fontSize: 16,
-                    }}
                     fill={colors.primary}
-                    style={{ filter: 'drop-shadow(0 4px 16px rgba(122,193,66,0.12))' }}
+                    label={false}
                   />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-            {/* Inference message below chart */}
-            <div style={{ textAlign: 'center', marginTop: 12 }}>
-              <span style={{
-                display: 'inline-block',
-                background: 'linear-gradient(90deg, #ffecd2 0%, #fcb69f 100%)',
-                color: colors.text.primary, // graphite
-                fontWeight: 600,
-                fontSize: typography.fontSize.base,
-                borderRadius: 12,
-                padding: '8px 20px',
-                boxShadow: '0 2px 8px rgba(255,60,32,0.07)',
-              }}>
-                Great job! You grew {growthPercent}% this month!
-              </span>
             </div>
           </div>
 
@@ -311,7 +277,6 @@ const RevenueTracker = () => {
             </div>
           </div>
 
-
           {/* Motivational Footer */}
           <div style={{ textAlign: 'center', padding: `${spacing[8]} 0 ${spacing[4]} 0` }}>
             <p style={{ fontSize: typography.fontSize.lg, color: colors.text.secondary }}>
@@ -323,70 +288,9 @@ const RevenueTracker = () => {
       </PageContainer>
       {/* Add bottom padding to prevent content overlap with fixed footer */}
       <div style={{ height: '65px' }} />
-      {/* Inline Footer Navigation (coach version) */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '65px',
-          background: 'rgba(255, 255, 255, 0.72)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '0.5px solid rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          padding: '0 20px',
-          zIndex: 1000,
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.03)',
-        }}
-      >
-        {[
-          { icon: Home, path: '/coach-home' },
-          { icon: 'revenue', path: '/revenue' },
-          { icon: User, path: '/settings' },
-          { icon: MessageCircle, path: '/testimonials' },
-        ].map((item) => {
-          const currentPath = globalThis.location.pathname;
-          const isActive = currentPath === item.path;
-          return (
-            <button
-              key={item.path}
-              onClick={() => { globalThis.location.href = item.path; }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '12px',
-                borderRadius: '12px',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                color: isActive ? '#ff3c20' : '#1d1d1f',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.background = 'rgba(255, 60, 32, 0.08)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              {item.icon === 'revenue' ? (
-                <RevenueTrackerIcon size={22} style={{ display: 'block' }} />
-              ) : (
-                <item.icon style={{ width: '18px', height: '18px', strokeWidth: 1.5 }} />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <CoachFooter />
     </main>
-    );
-    };
+  );
+};
 
-    export default RevenueTracker;
+export default RevenueTracker;

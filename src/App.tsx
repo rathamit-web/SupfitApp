@@ -14,6 +14,10 @@ import CoachHome from './pages/CoachHome';
 import ClientDetail from './pages/ClientDetail';
 import RevenueTracker from './pages/RevenueTracker';
 import Testimonials from './pages/Testimonials';
+
+import SupplementRecommendation from './pages/SupplementRecommendation';
+import WorkoutPlan from './pages/WorkoutPlan';
+import DietPlan from './pages/DietPlan';
 import NotFound from './pages/NotFound';
 
 import FollowersPage from './pages/Followers';
@@ -45,6 +49,9 @@ const App = () => (
           <Route path="/select-coach" element={<SelectCoach />} />
           <Route path="/select-dietician" element={<SelectDietician />} />
           <Route path="/feedback" element={<Feedback />} />
+          <Route path="/supplement-recommendation/:id" element={<SupplementRecommendation />} />
+          <Route path="/diet-plan/:id" element={<DietPlan />} />
+          <Route path="/workout-plan/:id" element={<WorkoutPlan />} />
           <Route path="/testimonials" element={<Testimonials />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

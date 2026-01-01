@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Home, Wallet, User, MessageCircle } from 'lucide-react';
+import CoachFooter from '@/components/CoachFooter';
 import { colors, typography } from '../lib/designSystem';
 // Footer replaced with inline navigation below
 
@@ -215,64 +216,7 @@ const Testimonials = () => {
       </main>
       {/* Add bottom padding to prevent content overlap with fixed footer */}
       <div style={{ height: '65px' }} />
-      {/* Inline Footer Navigation (coach version) */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '65px',
-          background: 'rgba(255, 255, 255, 0.72)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '0.5px solid rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          padding: '0 20px',
-          zIndex: 1000,
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.03)',
-        }}
-      >
-        {[
-          { icon: Home, path: '/coach-home' },
-          { icon: Wallet, path: '/revenue' },
-          { icon: User, path: '/settings' },
-          { icon: MessageCircle, path: '/testimonials' },
-        ].map((item) => {
-          const currentPath = globalThis.location.pathname;
-          const isActive = currentPath === item.path;
-          return (
-            <button
-              key={item.path}
-              onClick={() => { globalThis.location.href = item.path; }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '12px',
-                borderRadius: '12px',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                color: isActive ? '#ff3c20' : '#1d1d1f',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.background = 'rgba(255, 60, 32, 0.08)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <item.icon style={{ width: '18px', height: '18px', strokeWidth: 1.5 }} />
-            </button>
-          );
-        })}
-      </div>
+      <CoachFooter />
     </div>
   );
 };

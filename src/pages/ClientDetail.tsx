@@ -1,5 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { colors, typography, shadows, spacing, borderRadius, transitions } from '@/lib/designSystem';
 import {
   ArrowLeft,
@@ -11,18 +13,66 @@ import {
   Scale,
   ChevronRight,
   Dumbbell,
-  Flame,
   Heart,
+  MessageCircle,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import PageContainer from '@/components/PageContainer';
-import Footer from '@/components/Footer';
+import CoachFooter from '@/components/CoachFooter';
 
 const ClientDetail = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [sending, setSending] = useState(false);
 
-  // Mock client data
+  const activeClients = [
+    {
+      id: 2,
+      name: 'Amit',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80',
+      isNew: false,
+    },
+    {
+      id: 3,
+      name: 'Hari',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80',
+      isNew: false,
+    },
+    {
+      id: 4,
+      name: 'Krishna',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&q=80',
+      isNew: false,
+    },
+    {
+      id: 1,
+      name: 'Pathik',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
+      isNew: true,
+    },
+    {
+      id: 6,
+      name: 'Priya',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80',
+      isNew: true,
+    },
+    {
+      id: 5,
+      name: 'Ravi',
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&q=80',
+      isNew: false,
+    },
+  ].sort((a, b) => a.name.localeCompare(b.name));
+
+  // Find the selected client by id (default to first if not found)
+  const selectedClient = activeClients.find(c => String(c.id) === id) || activeClients[0];
+
+  // Mock client data (should be fetched per client in real app)
   const client = {
+    ...selectedClient,
+    // ...existing mock data below (for demo, you may want to map by id in real app)
     name: 'Amit Rath',
     program: 'Weight Loss Program',
     phone: '+91 98765 43210',
@@ -124,10 +174,10 @@ const ClientDetail = () => {
       {
         id: 1,
         icon: Dumbbell,
-        title: 'Protein Recommendations',
+        title: 'Supplement Recommendation',
         color: 'bg-green-100 text-green-600',
       },
-      { id: 2, icon: Flame, title: 'Workout Guidance', color: 'bg-blue-100 text-blue-600' },
+      { id: 2, icon: null, title: 'Workout Plan', color: 'bg-blue-100 text-blue-600' },
       { id: 3, icon: Utensils, title: 'Diet Plans', color: 'bg-red-100 text-red-600' },
     ],
   };
@@ -144,7 +194,8 @@ const ClientDetail = () => {
       }}
     >
       <PageContainer>
-        {/* Header with gradient background */}
+
+        {/* Header with gradient background and Active Clients Slider */}
         <header
           style={{
             position: 'relative',
@@ -190,6 +241,96 @@ const ClientDetail = () => {
             >
               <ArrowLeft style={{ width: '18px', height: '18px' }} /> Back
             </button>
+
+            {/* Active Clients Slider */}
+            <div
+              style={{
+                display: 'flex',
+                gap: spacing[24],
+                overflowX: 'auto',
+                paddingBottom: spacing[12],
+                scrollbarWidth: 'none', /* Firefox */
+                msOverflowStyle: 'none', /* IE and Edge */
+                WebkitOverflowScrolling: 'touch', /* Smooth scrolling on iOS */
+                marginBottom: spacing[24],
+              }}
+              className="hide-scrollbar"
+            >
+              <style>{`
+                .hide-scrollbar::-webkit-scrollbar {
+                  display: none; /* Chrome, Safari, Opera */
+                }
+              `}</style>
+              {activeClients.map((client) => {
+                const isSelected = String(client.id) === String(selectedClient.id);
+                return (
+                  <button
+                    key={client.id}
+                    onClick={() => navigate(`/client/${client.id}`)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: spacing[8],
+                      minWidth: '80px',
+                      background: isSelected ? colors.primary : 'rgba(255,255,255,0.72)',
+                      color: isSelected ? '#fff' : colors.text.primary,
+                      borderRadius: borderRadius.lg,
+                      boxShadow: shadows.sm,
+                      padding: `${spacing[12]} ${spacing[10]}`,
+                      border: isSelected ? `2px solid ${colors.primary}` : '0.5px solid rgba(0,0,0,0.04)',
+                      position: 'relative',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      transition: transitions.fast,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = shadows.md;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = shadows.sm;
+                    }}
+                  >
+                    <div style={{ position: 'relative' }}>
+                      {client.isNew && (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            top: '-6px',
+                            right: '-6px',
+                            background: colors.primary,
+                            color: '#fff',
+                            fontSize: typography.fontSize.xs,
+                            padding: `${spacing[2]} ${spacing[7]}`,
+                            borderRadius: borderRadius.lg,
+                            zIndex: 2,
+                          }}
+                        >
+                          New
+                        </span>
+                      )}
+                      <Avatar
+                        style={{
+                          width: '56px',
+                          height: '56px',
+                          border: isSelected ? `2px solid #fff` : '2px solid #fff',
+                          boxShadow: shadows.sm,
+                          background: isSelected ? colors.primary : 'rgba(255,255,255,0.72)',
+                        }}
+                      >
+                        <AvatarImage src={client.avatar} />
+                        <AvatarFallback>{client.name[0]}</AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.normal, color: isSelected ? '#fff' : colors.text.primary }}>
+                      {client.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Profile Section */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: spacing[8] }}>
@@ -580,15 +721,6 @@ const ClientDetail = () => {
             </div>
           </section>
 
-          {/* Coach Notes */}
-          <section style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: spacing[32] }}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.text.primary }}>Coach Notes</h2>
-              <Button variant="ghost" size="sm" style={{ color: colors.primary }}>
-                Add Note
-              </Button>
-            </div>
-          </section>
 
           {/* Subscription & Payment Section - Compact */}
           <section style={{ marginBottom: spacing[32] }}>
@@ -724,6 +856,13 @@ const ClientDetail = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: spacing[12] }}>
               {client.suggestions.map((suggestion) => {
                 const Icon = suggestion.icon;
+                // Add navigation for Supplement Recommendation, Diet Plan, and Workout Guidance
+                const renderIcon = typeof Icon === 'function';
+                const handleClick = () => {
+                  if (suggestion.title === 'Supplement Recommendation') navigate(`/supplement-recommendation/${selectedClient.id}`);
+                  else if (suggestion.title === 'Diet Plan' || suggestion.title === 'Diet Plans') navigate(`/diet-plan/${selectedClient.id}`);
+                  else if (suggestion.title === 'Workout Plan' || suggestion.title === 'Workout Guidance') navigate(`/workout-plan/${selectedClient.id}`);
+                };
                 return (
                   <button
                     key={suggestion.id}
@@ -744,6 +883,51 @@ const ClientDetail = () => {
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
                     onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+                    onClick={handleClick}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing[12] }}>
+                      {renderIcon && (
+                        <div style={{
+                          background: colors.primary,
+                          padding: spacing[8],
+                          borderRadius: borderRadius.md,
+                          boxShadow: shadows.xs,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                          <Icon style={{ width: '16px', height: '16px', color: '#fff' }} />
+                        </div>
+                      )}
+                      <span style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>{suggestion.title}</span>
+                    </div>
+                    <ChevronRight style={{ width: '16px', height: '16px', color: colors.text.secondary }} />
+                  </button>
+                );
+                // (Removed unreachable code after return)
+              })}
+
+              {/* Message suggestion card with Apple-style message icon and dialog */}
+              <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    style={{
+                      background: 'rgba(255,255,255,0.7)',
+                      backdropFilter: 'blur(16px)',
+                      WebkitBackdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(0,0,0,0.08)',
+                      borderRadius: borderRadius.lg,
+                      padding: spacing[16],
+                      boxShadow: shadows.sm,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: spacing[12] }}>
                       <div style={{
@@ -755,111 +939,152 @@ const ClientDetail = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}>
-                        <Icon style={{ width: '16px', height: '16px', color: '#fff' }} />
+                        <MessageCircle style={{ width: '16px', height: '16px', color: '#fff' }} />
                       </div>
-                      <span style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>{suggestion.title}</span>
+                      <span style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>Message</span>
                     </div>
                     <ChevronRight style={{ width: '16px', height: '16px', color: colors.text.secondary }} />
                   </button>
-                );
-              })}
+                </DialogTrigger>
+                <DialogContent style={{ maxWidth: 420, background: '#fff', borderRadius: 18, padding: 32 }}>
+                  <DialogHeader>
+                    <DialogTitle style={{ fontSize: 22, fontWeight: 700, color: colors.primary }}>Send Message to Client</DialogTitle>
+                  </DialogHeader>
+                  <textarea
+                    value={messageText}
+                    onChange={e => setMessageText(e.target.value)}
+                    placeholder="Type your message here..."
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: 14,
+                      borderRadius: 12,
+                      border: '1px solid #eee',
+                      fontSize: 16,
+                      marginTop: 18,
+                      marginBottom: 18,
+                      resize: 'vertical',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                    <Button
+                      variant="outline"
+                      style={{ flex: 1, borderRadius: 12, fontWeight: 600, fontSize: 16 }}
+                      onClick={() => setMessageDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      style={{ flex: 1, borderRadius: 12, fontWeight: 600, fontSize: 16, background: colors.primary, color: '#fff', boxShadow: '0 2px 8px rgba(255,60,32,0.12)' }}
+                      disabled={sending || !messageText.trim()}
+                      onClick={async () => {
+                        setSending(true);
+                        // Save message to localStorage for user home page
+                        const userMessages = JSON.parse(localStorage.getItem('userMessages') || '[]');
+                        userMessages.push({
+                          clientId: client.id,
+                          message: messageText,
+                          from: 'coach',
+                          date: new Date().toISOString(),
+                        });
+                        localStorage.setItem('userMessages', JSON.stringify(userMessages));
+                        setSending(false);
+                        setMessageText('');
+                        setMessageDialogOpen(false);
+                      }}
+                    >
+                      Send
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Schedule Session suggestion card */}
+              <button
+                type="button"
+                style={{
+                  background: 'rgba(255,255,255,0.7)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  borderRadius: borderRadius.lg,
+                  padding: spacing[16],
+                  boxShadow: shadows.sm,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s',
+                  marginTop: 12,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+                onClick={() => {}}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[12] }}>
+                  <div style={{
+                    background: colors.primary,
+                    padding: spacing[8],
+                    borderRadius: borderRadius.md,
+                    boxShadow: shadows.xs,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Calendar style={{ width: '16px', height: '16px', color: '#fff' }} />
+                  </div>
+                  <span style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>Schedule Session</span>
+                </div>
+                <ChevronRight style={{ width: '16px', height: '16px', color: colors.text.secondary }} />
+              </button>
+
+              {/* View Reports suggestion card */}
+              <button
+                type="button"
+                style={{
+                  background: 'rgba(255,255,255,0.7)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  borderRadius: borderRadius.lg,
+                  padding: spacing[16],
+                  boxShadow: shadows.sm,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s',
+                  marginTop: 12,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+                onClick={() => {}}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[12] }}>
+                  <div style={{
+                    background: colors.primary,
+                    padding: spacing[8],
+                    borderRadius: borderRadius.md,
+                    boxShadow: shadows.xs,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <FileText style={{ width: '16px', height: '16px', color: '#fff' }} />
+                  </div>
+                  <span style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: colors.text.primary }}>View Reports</span>
+                </div>
+                <ChevronRight style={{ width: '16px', height: '16px', color: colors.text.secondary }} />
+              </button>
+
             </div>
           </section>
 
-          {/* Action Buttons */}
-          <section style={{ marginBottom: spacing[32] }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[16] }}>
-              <button
-                style={{
-                  width: '100%',
-                  background: colors.primary,
-                  color: '#fff',
-                  fontWeight: typography.fontWeight.semibold,
-                  fontSize: typography.fontSize.lg,
-                  padding: `${spacing[14]} 0`,
-                  borderRadius: borderRadius.lg,
-                  border: 'none',
-                  boxShadow: shadows.md,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: spacing[10],
-                  cursor: 'pointer',
-                  transition: transitions.normal,
-                }}
-              >
-                <MessageSquare style={{ width: '18px', height: '18px', marginRight: spacing[8] }} />
-                Message Client
-              </button>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[12] }}>
-                <button
-                  style={{
-                    background: '#fff',
-                    color: colors.primary,
-                    fontWeight: typography.fontWeight.semibold,
-                    fontSize: typography.fontSize.base,
-                    padding: `${spacing[12]} 0`,
-                    borderRadius: borderRadius.lg,
-                    border: `1.5px solid ${colors.primary}`,
-                    boxShadow: shadows.xs,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: spacing[8],
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Calendar style={{ width: '16px', height: '16px', marginRight: spacing[6] }} />
-                  Schedule Session
-                </button>
-                <button
-                  style={{
-                    background: '#fff',
-                    color: colors.primary,
-                    fontWeight: typography.fontWeight.semibold,
-                    fontSize: typography.fontSize.base,
-                    padding: `${spacing[12]} 0`,
-                    borderRadius: borderRadius.lg,
-                    border: `1.5px solid ${colors.primary}`,
-                    boxShadow: shadows.xs,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: spacing[8],
-                    cursor: 'pointer',
-                  }}
-                >
-                  <FileText style={{ width: '16px', height: '16px', marginRight: spacing[6] }} />
-                  View Reports
-                </button>
-              </div>
-              <button
-                style={{
-                  width: '100%',
-                  background: '#fff',
-                  color: colors.primary,
-                  fontWeight: typography.fontWeight.semibold,
-                  fontSize: typography.fontSize.lg,
-                  padding: `${spacing[14]} 0`,
-                  borderRadius: borderRadius.lg,
-                  border: `1.5px solid ${colors.primary}`,
-                  boxShadow: shadows.xs,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: spacing[10],
-                  cursor: 'pointer',
-                }}
-              >
-                <Utensils style={{ width: '18px', height: '18px', marginRight: spacing[8] }} />
-                Update Diet
-              </button>
-            </div>
-          </section>
         </div>
       </PageContainer>
 
-      <Footer />
+      <CoachFooter />
     </main>
   );
 };

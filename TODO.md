@@ -1,0 +1,5 @@
+- [ ] Remove automatic navigation from handleRecommend function
+- [ ] Change button text to 'Select' when plan is selected
+- [ ] Load previous selections from localStorage on component mount
+- [ ] Fix Lean & Fat Loss button to pass plan title to handleRecommend
+- [ ] Update button styling for selected state

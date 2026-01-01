@@ -1,4 +1,13 @@
+
 # Supfit Project
+## Recent Updates (as of Dec 31, 2025)
+
+- **HealthDashboard** now fetches and visualizes real trend data for Blood Pressure and Blood Sugar from Supabase (`manual_vitals` table). Trend analysis is backend-driven and supports weekly, monthly, and yearly aggregation.
+- **Manual Vital Entry**: Users can enter Blood Pressure and Blood Sugar manually in the app. These are stored in Supabase and visualized in the dashboard.
+- **Error Fixes**: Fixed JSX syntax errors (e.g., unclosed `<View>` in `UserSettingsNative.tsx`) and improved type safety in trend data aggregation.
+- **Supabase Integration**: All user-specific health data, profile, and subscriptions are now synced with Supabase for robust backend storage and analytics.
+- **Best Practices**: Used upsert for user settings, atomic updates, and local+remote sync patterns. All image/document uploads use Supabase Storage.
+
 
 ## Project info
 
