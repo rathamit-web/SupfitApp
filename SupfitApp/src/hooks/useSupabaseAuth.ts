@@ -13,10 +13,41 @@ export function useSupabaseAuth() {
       let result;
       if (isLogin) {
         result = await supabase.auth.signInWithPassword({ email, password });
+        
+        // Check for specific error types
+        if (result.error) {
+          if (result.error.message.includes('Invalid login credentials')) {
+            setError('Invalid email or password. Please check your credentials and try again.');
+          } else if (result.error.message.includes('Email not confirmed')) {
+            setError('Please confirm your email before logging in. Check your inbox for a confirmation link.');
+          } else {
+            setError(result.error.message);
+          }
+        }
       } else {
-        result = await supabase.auth.signUp({ email, password });
+        // Sign up
+        result = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            // For development/testing, you can add emailRedirectTo if needed
+            data: {
+              created_at: new Date().toISOString(),
+            }
+          }
+        });
+        
+        if (result.error) {
+          if (result.error.message.includes('already registered')) {
+            setError('This email is already registered. Please login instead.');
+          } else {
+            setError(result.error.message);
+          }
+        } else if (result.data?.user && !result.data.session) {
+          // User created but no session means email confirmation is required
+          setError('CONFIRM_EMAIL');
+        }
       }
-      if (result.error) setError(result.error.message);
       return result;
     } catch (e: any) {
       setError(e.message || 'Unknown error');
@@ -26,5 +57,26 @@ export function useSupabaseAuth() {
     }
   }
 
-  return { signInOrSignUp, loading, error };
+  // Resend confirmation email
+  async function resendConfirmationEmail(email: string) {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+      if (error) {
+        setError(error.message);
+        return { error };
+      }
+      return { success: true };
+    } catch (e: any) {
+      setError(e.message || 'Failed to resend confirmation email');
+      return { error: e };
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return { signInOrSignUp, resendConfirmationEmail, loading, error, setError };
 }

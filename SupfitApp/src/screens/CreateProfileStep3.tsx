@@ -5,7 +5,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useUserRole } from '../context/UserRoleContext';
 
 
 const consentPoints = [
@@ -17,11 +18,20 @@ const consentPoints = [
 
 export default function CreateProfileStep3() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { role } = useUserRole();
   const { width } = Dimensions.get('window');
 
   const handleContinue = () => {
-    // You can navigate to the next screen or home here
-    navigation.navigate('IndividualHome');
+    // Get userType from route params or role context
+    const userType = route.params?.userType || role;
+    
+    // Navigate to the appropriate home screen based on user type
+    if (userType === 'coach') {
+      navigation.navigate('CoachHome');
+    } else {
+      navigation.navigate('IndividualHome');
+    }
   };
 
   return (

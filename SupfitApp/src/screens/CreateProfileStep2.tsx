@@ -37,7 +37,8 @@ const CreateProfileStep2 = () => {
   };
 
   const handleNext = () => {
-    navigation.navigate('CreateProfileStep3', { formData });
+    const userType = route.params?.userType || 'individual';
+    navigation.navigate('CreateProfileStep3', { formData, userType });
   };
   const handleBack = () => {
     navigation.goBack();

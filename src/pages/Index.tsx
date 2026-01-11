@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,9 +23,6 @@ import {
   UtensilsCrossed,
   Edit3,
   Edit2,
-  Home,
-  LayoutDashboard,
-  User,
 } from 'lucide-react';
 import {
   Dialog,
@@ -65,6 +63,21 @@ const Index = () => {
     return savedImage || 'https://images.unsplash.com/photo-1605296867424-35fc25c9212a?w=400&q=80';
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingProfile, setUploadingProfile] = useState(false);
+  const [uploadingPosts, setUploadingPosts] = useState<Record<number, boolean>>({});
+
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+  const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png']);
+
+  const validateImage = (file: File): string | null => {
+    if (!ALLOWED_TYPES.has(file.type)) {
+      return 'Only JPEG or PNG files are allowed.';
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      return 'File too large. Maximum size is 10 MB.';
+    }
+    return null;
+  };
 
   const stats = [
     { label: 'Active Hours', value: '6.5', unit: 'hrs', icon: Zap },
@@ -172,6 +185,12 @@ const Index = () => {
   const [showCommentsModal, setShowCommentsModal] = useState<number | null>(null);
 
   const handleWorkoutImageChange = (postId: number, file: File) => {
+    const err = validateImage(file);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    setUploadingPosts((prev) => ({ ...prev, [postId]: true }));
     const reader = new FileReader();
     reader.onloadend = () => {
       const updatedPosts = posts.map((post) =>
@@ -179,6 +198,12 @@ const Index = () => {
       );
       setPosts(updatedPosts);
       localStorage.setItem('workoutPosts', JSON.stringify(updatedPosts));
+      setUploadingPosts((prev) => ({ ...prev, [postId]: false }));
+      toast.success('Workout image updated');
+    };
+    reader.onerror = () => {
+      toast.error('Failed to process the image. Please try again.');
+      setUploadingPosts((prev) => ({ ...prev, [postId]: false }));
     };
     reader.readAsDataURL(file);
   };
@@ -424,15 +449,28 @@ const Index = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png"
                   style={{ display: 'none' }}
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
+                      const err = validateImage(file);
+                      if (err) {
+                        toast.error(err);
+                        e.currentTarget.value = '';
+                        return;
+                      }
+                      setUploadingProfile(true);
                       const reader = new FileReader();
                       reader.onloadend = () => {
                         setProfileImage(reader.result as string);
                         localStorage.setItem('profileImage', reader.result as string);
+                        setUploadingProfile(false);
+                        toast.success('Profile picture updated');
+                      };
+                      reader.onerror = () => {
+                        toast.error('Failed to process the image. Please try again.');
+                        setUploadingProfile(false);
                       };
                       reader.readAsDataURL(file);
                     }
@@ -459,6 +497,25 @@ const Index = () => {
                   />
                   <AvatarFallback>FT</AvatarFallback>
                 </Avatar>
+                {uploadingProfile && (
+                  <div
+                    aria-live="polite"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(255,255,255,0.6)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#1d1d1f',
+                      borderRadius: '50%',
+                    }}
+                  >
+                    Uploading…
+                  </div>
+                )}
                 {/* Edit Button Overlay */}
                 <button
                   onClick={(e) => {
@@ -757,7 +814,7 @@ const Index = () => {
                         if (el) workoutFileInputRefs.current[post.id] = el;
                       }}
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png"
                       style={{ display: 'none' }}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
@@ -797,6 +854,24 @@ const Index = () => {
                         }}
                         draggable={false}
                       />
+                      {uploadingPosts[post.id] && (
+                        <div
+                          aria-live="polite"
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'rgba(255,255,255,0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: '#1d1d1f',
+                          }}
+                        >
+                          Uploading…
+                        </div>
+                      )}
                     </button>
                     {/* Edit Image Button */}
                     <button
@@ -2128,64 +2203,7 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Footer Navigation */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '65px',
-          background: 'rgba(255, 255, 255, 0.72)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '0.5px solid rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          padding: '0 20px',
-          zIndex: 1000,
-          boxShadow: '0 -2px 10px rgba(0, 0, 0, 0.03)',
-        }}
-      >
-        {[
-          { icon: Home, path: '/home' },
-          { icon: Dumbbell, path: '/plan' },
-          { icon: LayoutDashboard, path: '/coach-home' },
-          { icon: User, path: '/settings' },
-        ].map((item) => {
-          const currentPath = globalThis.location.pathname;
-          const isActive = currentPath === item.path;
-          return (
-            <button
-              key={item.path}
-              onClick={() => { globalThis.location.href = item.path; }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '12px',
-                borderRadius: '12px',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                color: isActive ? '#ff3c20' : '#1d1d1f',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.background = 'rgba(255, 60, 32, 0.08)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              <item.icon style={{ width: '18px', height: '18px', strokeWidth: 1.5 }} />
-            </button>
-          );
-        })}
-      </div>
+      {/* Footer Navigation handled by shared Footer component */}
     </main>
   );
 };

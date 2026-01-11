@@ -15,6 +15,7 @@ const CreateProfileStep1 = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { width, height } = Dimensions.get('window');
+  const userType = route.params?.userType || 'individual';
   const [formData, setFormData] = useState({
     name: '',
     age: '',
@@ -34,7 +35,7 @@ const CreateProfileStep1 = () => {
   };
 
   const handleNext = () => {
-    navigation.navigate('CreateProfileStep2', { formData });
+    navigation.navigate('CreateProfileStep2', { formData, userType });
   };
 
   return (

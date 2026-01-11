@@ -1,5 +1,7 @@
-- [ ] Remove automatic navigation from handleRecommend function
-- [ ] Change button text to 'Select' when plan is selected
-- [ ] Load previous selections from localStorage on component mount
-- [ ] Fix Lean & Fat Loss button to pass plan title to handleRecommend
-- [ ] Update button styling for selected state
+# TODO: Enhance Upload Error Handling in IndividualUserHome
+
+## Tasks
+- [ ] Modify uploadWorkoutImage.ts to throw errors instead of returning null
+- [ ] Update handleEditWorkoutImage in IndividualUserHome.tsx to remove null check for publicUrl
+- [ ] Change toast colors to warning style (#ff9500) for file type validation and upload failures
+- [ ] Ensure clear error messages for accessibility

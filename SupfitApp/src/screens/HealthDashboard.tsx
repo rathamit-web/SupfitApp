@@ -2,9 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Pressable, Platform } from 'react-native';
 import { supabase } from '../lib/supabaseClient';
+import { ENABLE_PURPOSED_VITALS, DEFAULT_VITAL_PURPOSE } from '../config/privacy';
+import { auditEvent } from '../lib/audit';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Svg, Polyline, Line, Circle } from 'react-native-svg';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
+import FooterNav from '../components/FooterNav';
 
 
 
@@ -154,13 +157,27 @@ const HealthDashboard = ({ navigation }: any) => {
         // Get start date for period
         const startDate = getStartDate(selectedPeriod);
         // Query manual_vitals for this user, type, and date >= startDate
-        const { data, error } = await supabase
+        let query = supabase
           .from('manual_vitals')
           .select('*')
           .eq('user_id', user_id)
           .eq('type', vitalType)
           .gte('date', startDate.toISOString().slice(0, 10))
           .order('date', { ascending: true });
+
+        if (ENABLE_PURPOSED_VITALS) {
+          query = query.eq('purpose', DEFAULT_VITAL_PURPOSE);
+        }
+
+        const { data, error } = await query;
+        if (!error) {
+          await auditEvent({
+            action: 'read',
+            table: 'manual_vitals',
+            userId: user_id,
+            purpose: ENABLE_PURPOSED_VITALS ? DEFAULT_VITAL_PURPOSE : undefined,
+          });
+        }
         if (error) throw error;
         // Build time buckets
         let buckets: (number | undefined)[] = [];
@@ -459,32 +476,7 @@ const HealthDashboard = ({ navigation }: any) => {
         </View>
       </ScrollView>
       {/* Modern Glassmorphic Footer */}
-      <View style={footerStyles.footerContainer}>
-        <Pressable
-          style={({ pressed }) => [footerStyles.iconBtn, pressed && footerStyles.iconBtnActive]}
-          onPress={() => {}}
-        >
-          <MaterialIcons name="home-filled" size={28} color="#ff3c20" style={footerStyles.iconShadow} />
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [footerStyles.iconBtn, pressed && footerStyles.iconBtnActive]}
-          onPress={() => navigation?.navigate ? navigation.navigate('PlanNative') : {}}
-        >
-          <MaterialIcons name="event" size={26} color="#6e6e73" style={footerStyles.iconShadow} />
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [footerStyles.iconBtn, pressed && footerStyles.iconBtnActive]}
-          onPress={() => navigation?.navigate ? navigation.navigate('HealthDashboard') : {}}
-        >
-          <MaterialIcons name="dashboard" size={26} color="#6e6e73" style={footerStyles.iconShadow} />
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [footerStyles.iconBtn, pressed && footerStyles.iconBtnActive]}
-          onPress={() => navigation?.navigate ? navigation.navigate('UserSettingsNative') : {}}
-        >
-          <MaterialIcons name="person" size={26} color="#6e6e73" style={footerStyles.iconShadow} />
-        </Pressable>
-      </View>
+      <FooterNav />
     </LinearGradient>
   );
 };
@@ -503,10 +495,14 @@ const footerStyles = StyleSheet.create({
     backgroundColor: Platform.OS === 'ios' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.92)',
     borderTopWidth: 0.5,
     borderColor: '#e5e5ea',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px -4px 12px rgba(0,0,0,0.08)' }
+      : {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+        }),
     marginBottom: 16,
   },
   iconBtn: {
@@ -529,7 +525,7 @@ const footerStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  container: { padding: 0, paddingBottom: 90 },
+  container: { padding: 0, paddingBottom: 110 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: 'rgba(255,255,255,0.85)', borderBottomWidth: 0.5, borderColor: '#e5e5ea' },
   backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center', marginRight: 12, borderWidth: 1, borderColor: '#eee' },
   headerTitle: { fontSize: 22, fontWeight: '700', color: '#2c2c2e' },

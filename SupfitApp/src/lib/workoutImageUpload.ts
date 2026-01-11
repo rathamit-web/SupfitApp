@@ -1,18 +1,25 @@
 import { supabase } from '../lib/supabaseClient';
-import * as FileSystem from 'expo-file-system';
 
-export async function uploadWorkoutImage(localUri: string, userId: string): Promise<string | null> {
+export async function uploadWorkoutImage(localUri: string, userId: string): Promise<string> {
   try {
     const fileExt = localUri.split('.').pop();
     const fileName = `workouts/${userId}_${Date.now()}.${fileExt}`;
-    const fileData = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+    const response = await fetch(localUri);
+    if (!response.ok) {
+      throw new Error('Failed to read image file.');
+    }
+    const blob = await response.blob();
+    const contentType = blob.type || (fileExt === 'jpg' || fileExt === 'jpeg' ? 'image/jpeg' : fileExt === 'png' ? 'image/png' : 'image/*');
     const { error: uploadError } = await supabase.storage
       .from('workouts')
-      .upload(fileName, Buffer.from(fileData, 'base64'), { contentType: 'image/*', upsert: true });
+      .upload(fileName, blob, { contentType, upsert: true });
     if (uploadError) throw uploadError;
     const { data: publicUrlData } = supabase.storage.from('workouts').getPublicUrl(fileName);
-    return publicUrlData?.publicUrl || null;
+    if (!publicUrlData?.publicUrl) {
+      throw new Error('Failed to generate image URL after upload.');
+    }
+    return publicUrlData.publicUrl;
   } catch (e) {
-    return null;
+    throw e;
   }
 }

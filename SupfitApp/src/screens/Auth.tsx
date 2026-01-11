@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Dimensions, Platform, Alert } from 'react-native';
 import { useUserRole } from '../context/UserRoleContext';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,7 +7,13 @@ import type { RouteProp } from '@react-navigation/native';
 // Removed duplicate BlurView import
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { AntDesign, FontAwesome, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { supabase } from '../../shared/supabaseClient';
+
+WebBrowser.maybeCompleteAuthSession();
 
 type AuthProps = {
   route: RouteProp<Record<string, object | undefined>, string>;
@@ -15,37 +21,98 @@ type AuthProps = {
 };
 
 export default function Auth({ route, navigation }: AuthProps) {
-  // BYPASS AUTH FOR TESTING: auto-redirect to correct home screen
-  useEffect(() => {
-    if (navigation && typeof navigation.replace === 'function') {
-      const userType = route?.params?.userType || 'individual';
-      if (userType === 'coach') {
-        navigation.replace('CoachHome', { userType: 'coach' });
-      } else {
-        navigation.replace('IndividualHome', { userType: 'individual' });
-      }
-    }
-  }, [navigation, route]);
   const userType = route?.params?.userType || 'individual';
   const [isLogin, setIsLogin] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
   const { role, setRole } = useUserRole();
-  const { signInOrSignUp, loading: authLoading, error: authError } = useSupabaseAuth();
+  const { signInOrSignUp, resendConfirmationEmail, loading: authLoading, error: authError, setError } = useSupabaseAuth();
 
   // prompt variable removed (was unused)
 
-  // Social login handlers (mocked)
-  const handleGoogleLogin = () => {
-    // TODO: Integrate Google login
-    alert('Google login (mock)');
+  // Google OAuth handler
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'supfit://auth/callback',
+          skipBrowserRedirect: true,
+        },
+      });
+      
+      if (error) {
+        Alert.alert('Error', error.message);
+        return;
+      }
+      
+      if (data?.url) {
+        const result = await WebBrowser.openAuthSessionAsync(data.url, 'supfit://auth/callback');
+        if (result.type === 'success' && result.url) {
+          // Handle the callback URL and extract tokens
+          const url = new URL(result.url);
+          const accessToken = url.searchParams.get('access_token');
+          const refreshToken = url.searchParams.get('refresh_token');
+          
+          if (accessToken) {
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || '',
+            });
+            
+            if (!sessionError) {
+              setRole(userType === 'coach' ? 'coach' : 'user');
+              navigation.navigate('CreateProfileStep1', { userType: role || userType });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Google sign-in failed. Please try again.');
+    }
   };
-  const handleAppleLogin = () => {
-    // TODO: Integrate Apple login
-    alert('Apple login (mock)');
+
+  // Apple OAuth handler
+  const handleAppleLogin = async () => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Not Available', 'Apple Sign-In is only available on iOS devices.');
+      return;
+    }
+    
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      
+      if (credential.identityToken) {
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+        });
+        
+        if (error) {
+          Alert.alert('Error', error.message);
+          return;
+        }
+        
+        if (data?.user) {
+          setRole(userType === 'coach' ? 'coach' : 'user');
+          navigation.navigate('CreateProfileStep1', { userType: role || userType });
+        }
+      }
+    } catch (err: any) {
+      if (err.code !== 'ERR_CANCELED') {
+        Alert.alert('Error', 'Apple sign-in failed. Please try again.');
+      }
+    }
   };
+
+  // Mobile OTP handler
   const handleMobileLogin = () => {
-    // TODO: Integrate Mobile OTP login
-    alert('Mobile login (mock)');
+    Alert.alert('Coming Soon', 'Mobile OTP login will be available soon.');
   };
 
   const handleSubmit = async () => {
@@ -56,14 +123,82 @@ export default function Auth({ route, navigation }: AuthProps) {
     // Set role in context if not already set (for deep links, etc)
     if (!role) setRole(userType === 'coach' ? 'coach' : 'user');
     if (!formData.email || !formData.password) {
-      alert('Please enter email and password');
+      Alert.alert('Missing Information', 'Please enter email and password');
       return;
     }
-    const result = await signInOrSignUp(formData.email, formData.password, isLogin);
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address');
+      return;
+    }
+    
+    // Password validation for signup
+    if (!isLogin && formData.password.length < 6) {
+      Alert.alert('Weak Password', 'Password must be at least 6 characters long');
+      return;
+    }
+    
+    const result = await signInOrSignUp(formData.email.trim().toLowerCase(), formData.password, isLogin);
+    
     if (result.error) {
-      alert(result.error.message || 'Authentication failed');
+      // Error is already set in the hook, but we can show specific alerts
+      if (result.error.message?.includes('Invalid login credentials')) {
+        Alert.alert(
+          'Login Failed',
+          'Invalid email or password. Please check your credentials.\n\nIf you just signed up, make sure to confirm your email first.',
+          [
+            { text: 'Try Again', style: 'cancel' },
+            { 
+              text: 'Sign Up Instead', 
+              onPress: () => setIsLogin(false) 
+            }
+          ]
+        );
+      } else if (result.error.message?.includes('Email not confirmed')) {
+        Alert.alert(
+          'Email Not Confirmed',
+          'Please check your inbox and click the confirmation link before logging in.',
+          [
+            { text: 'OK', style: 'cancel' },
+            { 
+              text: 'Resend Email', 
+              onPress: async () => {
+                const resendResult = await resendConfirmationEmail(formData.email.trim().toLowerCase());
+                if (resendResult.success) {
+                  Alert.alert('Email Sent', 'Confirmation email has been resent. Please check your inbox.');
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', result.error.message || 'Authentication failed');
+      }
       return;
     }
+    
+    // Check if email confirmation is required (signup without session)
+    if (!isLogin && result.data?.user && !result.data.session) {
+      setShowConfirmationMessage(true);
+      Alert.alert(
+        'Check Your Email',
+        `We've sent a confirmation link to ${formData.email}. Please click the link to verify your account, then come back and log in.`,
+        [
+          { 
+            text: 'OK, I\'ll Check', 
+            onPress: () => {
+              setIsLogin(true); // Switch to login mode
+              setShowConfirmationMessage(false);
+            }
+          }
+        ]
+      );
+      return;
+    }
+    
+    // Successfully authenticated
     if (isLogin) {
       if ((role || userType) === 'coach') {
         navigation.navigate('CoachHome', { userType: 'coach' });
@@ -76,8 +211,158 @@ export default function Auth({ route, navigation }: AuthProps) {
     }
   };
 
-  // Bypass: render nothing
-  return null;
+  return (
+    <LinearGradient colors={['#fff5f3', '#fafafa', '#f5f5f7']} style={styles.gradientBg}>
+      <View style={styles.outerContainer}>
+        <BlurView intensity={60} tint="light" style={styles.glassCard}>
+          <Image
+            source={require('../../assets/images/Supfitlogo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+
+          {/* Login / Signup Toggle */}
+          <View style={styles.tabRowGlass}>
+            <View style={styles.tabGlassBg}>
+              <TouchableOpacity
+                style={[styles.tabBtnGlass, isLogin ? styles.tabBtnGlassActive : styles.tabBtnGlassInactive]}
+                onPress={() => setIsLogin(true)}
+                activeOpacity={0.85}
+              >
+                {isLogin ? (
+                  <LinearGradient
+                    colors={['#ff3c20', '#ff6a4d']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.tabBtnGlassGradient}
+                  >
+                    <Text style={[styles.tabBtnGlassText, styles.tabBtnGlassTextActive]}>Login</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.tabBtnGlassInactiveBg}>
+                    <Text style={styles.tabBtnGlassText}>Login</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tabBtnGlass, !isLogin ? styles.tabBtnGlassActive : styles.tabBtnGlassInactive]}
+                onPress={() => setIsLogin(false)}
+                activeOpacity={0.85}
+              >
+                {!isLogin ? (
+                  <LinearGradient
+                    colors={['#ff3c20', '#ff6a4d']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.tabBtnGlassGradient}
+                  >
+                    <Text style={[styles.tabBtnGlassText, styles.tabBtnGlassTextActive]}>Sign Up</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={styles.tabBtnGlassInactiveBg}>
+                    <Text style={styles.tabBtnGlassText}>Sign Up</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Form */}
+          <View style={styles.form}>
+            {!isLogin && (
+              <View style={styles.inputWrap}>
+                <Text style={styles.label}>Name</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Your name"
+                  placeholderTextColor="#aaa"
+                  value={formData.name}
+                  onChangeText={(text) => setFormData({ ...formData, name: text })}
+                  autoCapitalize="words"
+                />
+              </View>
+            )}
+            <View style={styles.inputWrap}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="you@email.com"
+                placeholderTextColor="#aaa"
+                value={formData.email}
+                onChangeText={(text) => setFormData({ ...formData, email: text })}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.inputWrap}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor="#aaa"
+                value={formData.password}
+                onChangeText={(text) => setFormData({ ...formData, password: text })}
+                secureTextEntry
+              />
+            </View>
+
+            {/* Email Confirmation Message */}
+            {showConfirmationMessage && (
+              <View style={styles.confirmationBanner}>
+                <MaterialIcons name="mail-outline" size={20} color="#007aff" />
+                <Text style={styles.confirmationText}>
+                  Check your email for a confirmation link, then log in.
+                </Text>
+              </View>
+            )}
+
+            {/* Auth Error Message */}
+            {authError && authError !== 'CONFIRM_EMAIL' && (
+              <View style={styles.errorBanner}>
+                <MaterialIcons name="error-outline" size={18} color="#ff3c20" />
+                <Text style={styles.errorText}>{authError}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={authLoading}>
+              <LinearGradient
+                colors={['#ff3c20', '#ff6a4d']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.submitBtnGradient}
+              >
+                <Text style={styles.submitBtnText}>
+                  {authLoading ? 'Please wait...' : isLogin ? 'Login' : 'Create Account'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Helpful hint for login */}
+            {isLogin && (
+              <Text style={styles.hintText}>
+                Just signed up? Check your email for a confirmation link first.
+              </Text>
+            )}
+          </View>
+
+          {/* Social Login */}
+          <Text style={styles.orText}>or</Text>
+          <Text style={styles.continueWith}>Continue with</Text>
+          <View style={styles.socialRow}>
+            <TouchableOpacity style={styles.socialIconBtn} onPress={handleGoogleLogin}>
+              <AntDesign name="google" size={22} color="#EA4335" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialIconBtn} onPress={handleAppleLogin}>
+              <Ionicons name="logo-apple" size={22} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialIconBtn} onPress={handleMobileLogin}>
+              <MaterialIcons name="phone-iphone" size={22} color="#34C759" />
+            </TouchableOpacity>
+          </View>
+        </BlurView>
+      </View>
+    </LinearGradient>
+  );
 }
 
 const { width, height } = Dimensions.get('window');
@@ -324,5 +609,42 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 2,
     elevation: 2,
+  },
+  confirmationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,122,255,0.1)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  confirmationText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#007aff',
+    fontWeight: '500',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,60,32,0.1)',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#ff3c20',
+    fontWeight: '500',
+  },
+  hintText: {
+    fontSize: 13,
+    color: '#6e6e73',
+    textAlign: 'center',
+    marginTop: 12,
+    fontStyle: 'italic',
   },
 });

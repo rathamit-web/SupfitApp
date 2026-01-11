@@ -1,23 +1,34 @@
-import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, Pressable, Platform } from 'react-native';
 import { useUserRole } from '../context/UserRoleContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-// const logoAsset = require('../../assets/images/Supfitlogo.png');
+import { Asset } from 'expo-asset';
+
+// Preload logo
+const logoImage = require('../../assets/images/Supfitlogo.png');
+
+const UserIcon = React.memo(() => <Feather name="user" size={23} color="#fff" />);
+UserIcon.displayName = 'UserIcon';
+const UsersIcon = React.memo(() => <Feather name="users" size={23} color="#fff" />);
+UsersIcon.displayName = 'UsersIcon';
+
 function RoleCard({ iconComponent, title, subtitle, onPress }: any) {
+  const [pressed, setPressed] = useState(false);
+  
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
       android_ripple={{ color: 'rgba(255, 87, 34, 0.12)' }}
-      style={{ borderRadius: 18, marginVertical: 8, alignSelf: 'center' }}
+      style={({ pressed: isPressed }) => [
+        styles.roleCardWrapper,
+        (pressed || isPressed) && styles.roleCardPressed
+      ]}
     >
-      <LinearGradient
-        colors={["#ff512f", "#ff3c20"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.roleCard}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <View style={styles.roleCardContainer}>
+        <View style={styles.roleCardContent}>
           <View style={styles.roleIconWrap}>
             {iconComponent}
           </View>
@@ -25,9 +36,11 @@ function RoleCard({ iconComponent, title, subtitle, onPress }: any) {
             <Text style={styles.roleTitle}>{title}</Text>
             <Text style={styles.roleSubtitle}>{subtitle}</Text>
           </View>
-          <Feather name="chevron-right" size={28} color="#fff" />
+          <View style={styles.chevronWrap}>
+            <Feather name="chevron-right" size={24} color="rgba(255, 60, 32, 0.8)" />
+          </View>
         </View>
-      </LinearGradient>
+      </View>
     </Pressable>
   );
 }
@@ -35,7 +48,23 @@ function RoleCard({ iconComponent, title, subtitle, onPress }: any) {
 
 export default function Landing({ navigation }: any) {
   const [loading, setLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const { setRole } = useUserRole();
+
+  // Preload assets for faster rendering
+  useEffect(() => {
+    async function preloadAssets() {
+      try {
+        await Asset.loadAsync(logoImage);
+        setImageLoaded(true);
+      } catch (error) {
+        console.error('Failed to preload assets:', error);
+        // Still set to true to allow fallback rendering
+        setImageLoaded(true);
+      }
+    }
+    preloadAssets();
+  }, []);
 
   // Restore: go to Auth page, let Auth handle bypass
   const handleRoleSelect = async (role: 'individual' | 'coach') => {
@@ -55,134 +84,271 @@ export default function Landing({ navigation }: any) {
 
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#ffffff', '#fafafa', '#f5f5f7']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}
+    >
       {loading && (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          {/* Keep loading overlay only for navigation, not for asset loading */}
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingSpinner} />
         </View>
       )}
       <View style={styles.centeredContent}>
-        <View style={{ width: 320, height: 140, backgroundColor: '#fcfcfd', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 0, marginTop: 0, overflow: 'hidden' }}>
+        <View style={styles.logoContainer}>
+          {!imageLoaded && (
+            <View style={styles.logoPlaceholder}>
+              <View style={styles.logoShimmer} />
+            </View>
+          )}
           <Image
-            source={require('../../assets/images/Supfitlogo.png')}
-            style={styles.logo}
-            fadeDuration={200}
-            // defaultSource is iOS only, but helps with perceived perf
-            defaultSource={require('../../assets/images/Supfitlogo.png')}
+            source={logoImage}
+            style={[styles.logo, !imageLoaded && styles.logoHidden]}
+            resizeMode="contain"
+            fadeDuration={300}
+            onLoadEnd={() => setImageLoaded(true)}
           />
         </View>
-        <Text style={styles.tagline}>Fuel your fitness, powered by AI</Text>
-        <Text style={styles.chooseRole}>CHOOSE YOUR ROLE</Text>
-        <RoleCard
-          iconComponent={<Feather name="user" size={36} color="#fff" />}
-          title="Individual User"
-          subtitle="Ar powered fitness tracking"
-          onPress={() => handleRoleSelect('individual')}
-        />
-        <RoleCard
-          iconComponent={<Feather name="users" size={36} color="#fff" />}
-          title="Coach & Dietician"
-          subtitle="Grow your finess business with Supfit"
-          onPress={() => handleRoleSelect('coach')}
-        />
+        
+        <View style={styles.heroSection}>
+               <Text style={styles.subtag}>Transform your health journey with the power of AI</Text>
+        </View>
+        
+        <View style={styles.rolesContainer}>
+          <Text style={styles.chooseRole}>Choose Your Role</Text>
+          
+          <RoleCard
+            iconComponent={<UserIcon />}
+            title="Individual User"
+            subtitle="AI powered fitness tracking"
+            onPress={() => handleRoleSelect('individual')}
+          />
+          
+          <RoleCard
+            iconComponent={<UsersIcon />}
+            title="Coach & Dietician"
+            subtitle="Grow your fitness business with Supfit"
+            onPress={() => handleRoleSelect('coach')}
+          />
+        </View>
       </View>
+      
       <View style={styles.footer}>
-        <Text style={styles.footerText}>© 2025 SupFit: Your journey to better health starts</Text>
+        <View style={styles.footerDivider} />
+        <Text style={styles.footerText}>© 2025 SupFit · Your journey to better health starts here</Text>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fcfcfd',
-    justifyContent: 'flex-start',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+  },
+  loadingSpinner: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: '#ff3c20',
+    borderTopColor: 'transparent',
   },
   centeredContent: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingHorizontal: 0,
-    paddingTop: 0,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  logoContainer: {
+    width: 280,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 25,
   },
   logo: {
-    width: 320,
-    height: 140,
-    resizeMode: 'contain',
-    marginBottom: 0,
-    marginTop: 0,
+    width: 260,
+    height: 100,
+  },
+  logoHidden: {
+    opacity: 0,
+  },
+  logoPlaceholder: {
+    position: 'absolute',
+    width: 260,
+    height: 100,
+    backgroundColor: '#f5f5f7',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  logoShimmer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#e8e8ed',
+  },
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 12,
   },
   tagline: {
-    fontSize: 19,
+    fontSize: 28,
     color: '#ff3c20',
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 18,
-    letterSpacing: 0.1,
-    fontFamily: 'System', // Use system font for Apple-like look
+    marginBottom: 8,
+    letterSpacing: -0.5,
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+      default: 'System',
+    }),
+  },
+  subtag: {
+    fontSize: 15,
+    color: '#86868b',
+    fontWeight: '400',
+    textAlign: 'center',
+    letterSpacing: 0.2,
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+      default: 'System',
+    }),
+  },
+  rolesContainer: {
+    width: '100%',
+    maxWidth: 440,
+    alignItems: 'center',
   },
   chooseRole: {
-    fontSize: 16,
-    color: '#6e6e73',
+    fontSize: 13,
+    color: '#86868b',
     fontWeight: '600',
     textAlign: 'center',
-    letterSpacing: 2.5,
-    marginBottom: 22,
+    letterSpacing: 1.2,
+    marginBottom: 20,
     textTransform: 'uppercase',
-    fontFamily: 'System',
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+      default: 'System',
+    }),
   },
-  roleCard: {
+  roleCardWrapper: {
+    width: '100%',
+    maxWidth: 400,
+    marginBottom: 16,
+    borderRadius: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 3,
+      },
+      web: {
+        boxShadow: '0 2px 16px rgba(0, 0, 0, 0.08)',
+      },
+    }),
+  },
+  roleCardPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.9,
+  },
+  roleCardContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
+  },
+  roleCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    width: 320,
-    alignSelf: 'center',
-    elevation: 6,
-    shadowColor: '#ff3c20',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    marginBottom: 0,
-    overflow: 'hidden',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   roleIconWrap: {
-    backgroundColor: 'rgba(255,255,255,0.28)',
-    borderRadius: 18,
-    padding: 16,
-    marginRight: 18,
+    width: 56,
+    height: 56,
+    backgroundColor: '#ff3c20',
+    borderRadius: 16,
+    marginRight: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   roleTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 2,
-    fontFamily: 'System',
-    textShadowColor: 'rgba(0,0,0,0.18)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 6,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ff3c20',
+    marginBottom: 4,
+    letterSpacing: -0.3,
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+      default: 'System',
+    }),
   },
   roleSubtitle: {
-    fontSize: 15,
-    color: '#fff',
+    fontSize: 14,
+    color: '#86868b',
     fontWeight: '400',
-    fontFamily: 'System',
-    textShadowColor: 'rgba(0,0,0,0.14)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    letterSpacing: 0.1,
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+      default: 'System',
+    }),
+  },
+  chevronWrap: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 60, 32, 0.06)',
+    borderRadius: 10,
+    marginLeft: 8,
   },
   footer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
-    paddingTop: 32,
+    paddingBottom: 24,
+    paddingTop: 16,
+    paddingHorizontal: 24,
+  },
+  footerDivider: {
+    width: 60,
+    height: 3,
+    backgroundColor: 'rgba(255, 60, 32, 0.2)',
+    borderRadius: 2,
+    marginBottom: 16,
   },
   footerText: {
-    fontSize: 13,
-    color: '#6e6e73',
+    fontSize: 12,
+    color: '#86868b',
     textAlign: 'center',
+    fontWeight: '400',
+    letterSpacing: 0.2,
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto',
+      default: 'System',
+    }),
   },
 });

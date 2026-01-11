@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert, Platform, AccessibilityInfo } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert, AccessibilityInfo } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '../lib/supabaseClient';
+import FooterNav from '../components/FooterNav';
 
-const months = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-const years = [2025, 2026, 2027, 2028, 2029, 2030];
+// Removed unused months and years arrays
 
 const MyTargetsNative = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [steps, setSteps] = useState(8000);
   const [running, setRunning] = useState(5);
   const [sports, setSports] = useState(60);
@@ -99,6 +98,7 @@ const MyTargetsNative = () => {
           <View style={styles.sliderBlock}>
             <View style={styles.targetRow}>
               <Text style={styles.targetLabel} accessibilityLabel="Steps slider label">Steps</Text>
+              {/* Removed color circle here */}
               <View style={styles.valueInputRow}>
                 <TouchableOpacity
                   accessible accessibilityLabel="Decrease steps"
@@ -112,7 +112,7 @@ const MyTargetsNative = () => {
                   keyboardType="numeric"
                   value={steps.toString()}
                   onChangeText={v => {
-                    let val = parseInt(v.replace(/[^0-9]/g, ''));
+                    let val = parseInt(v.replace(/\D/g, ''), 10);
                     if (isNaN(val)) val = 1000;
                     setSteps(Math.max(1000, Math.min(20000, val)));
                   }}
@@ -135,9 +135,10 @@ const MyTargetsNative = () => {
                 step={500}
                 value={steps}
                 onValueChange={v => { setSteps(v); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); announce(`Steps ${v}`); }}
-                minimumTrackTintColor="#007aff"
-                maximumTrackTintColor="#e5e5e7"
-                thumbTintColor="#007aff"
+                minimumTrackTintColor="transparent"
+                maximumTrackTintColor="transparent"
+                thumbTintColor="transparent"
+                style={{ height: 0 }}
                 accessibilityLabel="Steps slider"
                 accessible
               />
@@ -147,6 +148,7 @@ const MyTargetsNative = () => {
           <View style={styles.sliderBlock}>
             <View style={styles.targetRow}>
               <Text style={styles.targetLabel} accessibilityLabel="Running slider label">Running (km)</Text>
+              {/* Removed color circle here */}
               <View style={styles.valueInputRow}>
                 <TouchableOpacity
                   accessible accessibilityLabel="Decrease running"
@@ -160,7 +162,7 @@ const MyTargetsNative = () => {
                   keyboardType="numeric"
                   value={running.toString()}
                   onChangeText={v => {
-                    let val = parseInt(v.replace(/[^0-9]/g, ''));
+                    let val = parseInt(v.replace(/\D/g, ''), 10);
                     if (isNaN(val)) val = 1;
                     setRunning(Math.max(1, Math.min(20, val)));
                   }}
@@ -183,9 +185,10 @@ const MyTargetsNative = () => {
                 step={1}
                 value={running}
                 onValueChange={v => { setRunning(v); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); announce(`Running ${v}`); }}
-                minimumTrackTintColor="#34c759"
-                maximumTrackTintColor="#e5e5e7"
-                thumbTintColor="#34c759"
+                minimumTrackTintColor="transparent"
+                maximumTrackTintColor="transparent"
+                thumbTintColor="transparent"
+                style={{ height: 0 }}
                 accessibilityLabel="Running slider"
                 accessible
               />
@@ -195,6 +198,7 @@ const MyTargetsNative = () => {
           <View style={styles.sliderBlock}>
             <View style={styles.targetRow}>
               <Text style={styles.targetLabel} accessibilityLabel="Sports slider label">Sports (min)</Text>
+              {/* Removed color circle here */}
               <View style={styles.valueInputRow}>
                 <TouchableOpacity
                   accessible accessibilityLabel="Decrease sports"
@@ -208,7 +212,7 @@ const MyTargetsNative = () => {
                   keyboardType="numeric"
                   value={sports.toString()}
                   onChangeText={v => {
-                    let val = parseInt(v.replace(/[^0-9]/g, ''));
+                    let val = parseInt(v.replace(/\D/g, ''), 10);
                     if (isNaN(val)) val = 15;
                     setSports(Math.max(15, Math.min(180, val)));
                   }}
@@ -231,9 +235,10 @@ const MyTargetsNative = () => {
                 step={15}
                 value={sports}
                 onValueChange={v => { setSports(v); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); announce(`Sports ${v}`); }}
-                minimumTrackTintColor="#ff9500"
-                maximumTrackTintColor="#e5e5e7"
-                thumbTintColor="#ff9500"
+                minimumTrackTintColor="transparent"
+                maximumTrackTintColor="transparent"
+                thumbTintColor="transparent"
+                style={{ height: 0 }}
                 accessibilityLabel="Sports slider"
                 accessible
               />
@@ -243,6 +248,7 @@ const MyTargetsNative = () => {
           <View style={styles.sliderBlock}>
             <View style={styles.targetRow}>
               <Text style={styles.targetLabel} accessibilityLabel="Workout slider label">Workout (min)</Text>
+              {/* Removed color circle here */}
               <View style={styles.valueInputRow}>
                 <TouchableOpacity
                   accessible accessibilityLabel="Decrease workout"
@@ -256,7 +262,7 @@ const MyTargetsNative = () => {
                   keyboardType="numeric"
                   value={workout.toString()}
                   onChangeText={v => {
-                    let val = parseInt(v.replace(/[^0-9]/g, ''));
+                    let val = parseInt(v.replace(/\D/g, ''), 10);
                     if (isNaN(val)) val = 15;
                     setWorkout(Math.max(15, Math.min(180, val)));
                   }}
@@ -279,16 +285,17 @@ const MyTargetsNative = () => {
                 step={15}
                 value={workout}
                 onValueChange={v => { setWorkout(v); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); announce(`Workout ${v}`); }}
-                minimumTrackTintColor="#ff3c20"
-                maximumTrackTintColor="#e5e5e7"
-                thumbTintColor="#ff3c20"
+                minimumTrackTintColor="transparent"
+                maximumTrackTintColor="transparent"
+                thumbTintColor="transparent"
+                style={{ height: 0 }}
                 accessibilityLabel="Workout slider"
                 accessible
               />
             </View>
           </View>
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveDailyTargets} disabled={loading}>
-            <Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save Daily Targets'}</Text>
+          <TouchableOpacity style={styles.saveBtnUnified} onPress={handleSaveDailyTargets} disabled={loading} accessibilityRole="button" accessibilityLabel="Save">
+            <Text style={styles.saveBtnUnifiedText}>{loading ? 'Saving...' : 'Save'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -325,17 +332,18 @@ const MyTargetsNative = () => {
               />
             </View>
           </View>
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveMilestone} disabled={loading}>
-            <Text style={styles.saveBtnText}>{loading ? 'Saving...' : 'Save Milestone Target'}</Text>
+          <TouchableOpacity style={styles.saveBtnUnified} onPress={handleSaveMilestone} disabled={loading} accessibilityRole="button" accessibilityLabel="Save">
+            <Text style={styles.saveBtnUnifiedText}>{loading ? 'Saving...' : 'Save'}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <FooterNav />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { paddingBottom: 90, paddingTop: 0 },
+  container: { paddingBottom: 110, paddingTop: 0 },
   header: { padding: 24, backgroundColor: 'rgba(255,255,255,0.85)', borderBottomWidth: 0.5, borderColor: '#e5e5ea' },
   backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center', marginRight: 12, borderWidth: 1, borderColor: '#eee' },
   headerTitle: { fontSize: 28, fontWeight: '700', color: '#ff3c20', letterSpacing: -0.5 },
@@ -344,6 +352,7 @@ const styles = StyleSheet.create({
   sliderBlock: { marginBottom: 32 },
   sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   minMaxLabel: { fontSize: 13, color: '#6e6e73', width: 40, textAlign: 'center' },
+  // Removed color circle styles if any
   valueInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   valueInput: { width: 60, height: 36, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, textAlign: 'center', fontSize: 16, color: '#1d1d1f', backgroundColor: '#fff', marginHorizontal: 4 },
   incBtn: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#f5f5f7', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#eee' },
@@ -352,8 +361,26 @@ const styles = StyleSheet.create({
   targetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   targetLabel: { fontSize: 15, color: '#1d1d1f' },
   targetValue: { fontSize: 18, fontWeight: '700', color: '#ff3c20' },
-  saveBtn: { backgroundColor: '#ff3c20', borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 16 },
-  saveBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  saveBtnUnified: {
+    backgroundColor: '#ff3c20', // Supfit logo color
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.10,
+    shadowRadius: 3,
+    elevation: 2,
+    minWidth: 100,
+  },
+  saveBtnUnifiedText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+    letterSpacing: 0.1,
+  },
   input: { borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 12, fontSize: 16, backgroundColor: 'rgba(255,255,255,0.9)', marginBottom: 12, color: '#1d1d1f' },
   label: { fontSize: 14, fontWeight: '600', color: '#1d1d1f', marginBottom: 4 },
 });
