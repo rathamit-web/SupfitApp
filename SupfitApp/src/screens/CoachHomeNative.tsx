@@ -1,3 +1,4 @@
+  // ...existing code...
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -23,14 +24,32 @@ interface CoachHomeScreenProps {
   };
 }
 
+// ...existing code...
+
+// (Removed CoachHomeNative duplicate, only CoachHomeScreen is exported below)
+
+
+// Globally accepted image types (Meta/Google/Apple standard)
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
   'image/png',
-  'video/mp4',
-  'video/quicktime',
-  'video/webm'
+  'image/webp',
+  'image/heic',
+  'image/avif',
 ]);
 const MAX_FILE_SIZE_MB = 10;
+
+function isAllowedImageType(mimeType: string | undefined, fileName?: string): boolean {
+  if (mimeType && ALLOWED_MIME_TYPES.has(mimeType)) return true;
+  // Fallback: check extension if mimeType is missing (some Android/older pickers)
+  if (fileName) {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    return ['jpg','jpeg','png','webp','heic','avif'].includes(ext || '');
+  }
+  return false;
+}
+
+// Memoized icon components for performance
 
 // Memoized icon components for performance
 const UserPlusIcon = React.memo(() => <MaterialIcons name="person-add" size={24} color="#ff3c20" />);
@@ -39,6 +58,9 @@ const ClockIcon = React.memo(() => <MaterialIcons name="access-time" size={24} c
 ClockIcon.displayName = 'ClockIcon';
 const StarIcon = React.memo(() => <MaterialIcons name="star" size={24} color="#ff3c20" />);
 StarIcon.displayName = 'StarIcon';
+
+// Memoized icon components for performance
+// (Removed duplicate icon declarations)
 
 const DEFAULT_WORKOUT_IMAGE = 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80';
 
@@ -49,9 +71,15 @@ const DEFAULT_WORKOUT_IMAGE = 'https://images.unsplash.com/photo-1571019614242-c
 async function uploadImageToSupabase(uri: string, folder: string = 'profile-images'): Promise<string | null> {
   try {
     // Get authenticated user
-    const { data: authData } = await supabase.auth.getUser();
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) {
+      console.error('Supabase auth.getUser() error:', authError);
+      alert('Supabase auth error: ' + JSON.stringify(authError));
+      return null;
+    }
     if (!authData?.user?.id) {
       console.error('No authenticated user');
+      alert('No authenticated user. Please log in again.');
       return null;
     }
 
@@ -62,37 +90,45 @@ async function uploadImageToSupabase(uri: string, folder: string = 'profile-imag
 
     // Convert URI to blob for upload
     let blob: Blob;
-    if (Platform.OS === 'web') {
-      // For web, convert base64 data URI to blob
+    try {
       const response = await fetch(uri);
       blob = await response.blob();
-    } else {
-      // For native, fetch the file
-      const response = await fetch(uri);
-      blob = await response.blob();
+    } catch (blobError) {
+      console.error('Failed to fetch or convert URI to blob:', blobError, uri);
+      alert('Failed to process image file. ' + (blobError instanceof Error ? blobError.message : String(blobError)));
+      return null;
     }
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('images')
+    // Use 'User Uploads' bucket for workout/training images/videos
+    const bucket = folder === 'profile-images' ? 'Avatars' : 'User Uploads';
+
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
       .upload(filePath, blob, {
         contentType: 'image/jpeg',
         upsert: false,
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
+      console.error('Upload error:', uploadError, { filePath, userId, uri });
+      alert('Supabase upload error: ' + JSON.stringify(uploadError));
       return null;
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('images')
+    const { data: publicUrlData } = supabase.storage
+      .from(bucket)
       .getPublicUrl(filePath);
-
-    return publicUrl;
+    if (!publicUrlData?.publicUrl) {
+      console.error('No public URL returned from Supabase:', publicUrlData);
+      alert('No public URL returned from Supabase.');
+      return null;
+    }
+    return publicUrlData.publicUrl;
   } catch (error) {
     console.error('Error uploading to Supabase:', error);
+    alert('Unexpected error uploading to Supabase: ' + (error instanceof Error ? error.message : String(error)));
     return null;
   }
 }
@@ -149,8 +185,8 @@ function handleWorkoutFileInput(
     setUploading(null);
     return;
   }
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    alert('Only images (JPEG, PNG) and videos (MP4, MOV, WebM) are allowed.');
+  if (!isAllowedImageType(file.type ?? undefined, file.name)) {
+    alert('Only images (JPEG, PNG, WEBP, HEIC, AVIF) are allowed.');
     setUploading(null);
     return;
   }
@@ -165,41 +201,9 @@ function handleWorkoutFileInput(
   };
   reader.readAsDataURL(file);
 }
+// ...existing code...
 
-const posts = [
-  {
-    id: 1,
-    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80',
-    likes: 234,
-    comments: 12,
-    caption: 'Morning cardio session with clients 💪',
-    workout: 'Training',
-  },
-  {
-    id: 2,
-    image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=80',
-    likes: 189,
-    comments: 8,
-    caption: 'Group strength training today 🔥',
-    workout: 'Strength',
-  },
-  {
-    id: 3,
-    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=80',
-    likes: 312,
-    comments: 15,
-    caption: 'Client transformation results! 💯',
-    workout: 'Results',
-  },
-  {
-    id: 4,
-    image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80',
-    likes: 276,
-    comments: 19,
-    caption: 'Yoga & flexibility session 🧘',
-    workout: 'Yoga',
-  },
-];
+
 
 function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -217,13 +221,13 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
   // Workouts state for editable posts
   const [workouts, setWorkouts] = useState(fallbackWorkouts);
   const [isUploading, setIsUploading] = useState<number | null>(null);
-  const [activeClients, setActiveClients] = useState<Array<{ id: number; name: string; avatar: string; isNew: boolean }>>([]);
+  const [activeClients, setActiveClients] = useState<{ id: number; name: string; avatar: string; isNew: boolean }[]>([]);
   const [stats, setStats] = useState([
     { label: 'Active Clients', value: '0', icon: UserPlusIcon },
     { label: 'Years Experience', value: '—', unit: 'yrs', icon: ClockIcon },
     { label: 'Rating', value: '4.9', unit: '★', icon: StarIcon },
   ]);
-  const [loadingData, setLoadingData] = useState(false);
+
   const postLikes: Record<number, { id: number; name: string; avatar: string }[]> = {
     1: [
       { id: 1, name: 'Sarah Johnson', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80' },
@@ -255,25 +259,44 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
     ],
   };
 
-  // Load saved data
+  // Load saved data (prefer localStorage userProfile if present)
   useEffect(() => {
     (async () => {
-      const savedImage = await AsyncStorage.getItem('coachProfileImage');
-      const savedName = await AsyncStorage.getItem('coachName');
-      const savedTitle = await AsyncStorage.getItem('coachTitle');
-      if (savedImage) setProfileImage(savedImage);
-      if (savedName) setCoachName(savedName);
-      if (savedTitle) setCoachTitle(savedTitle);
+      // Try to get userProfile from localStorage (web only)
+      let userProfileName: string | null = null;
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          const userProfileRaw = window.localStorage.getItem('userProfile');
+          if (userProfileRaw) {
+            const userProfile = JSON.parse(userProfileRaw);
+            if (userProfile && typeof userProfile.name === 'string' && userProfile.name.trim()) {
+              userProfileName = userProfile.name.trim();
+              setCoachName(userProfileName);
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+      // Fallback to AsyncStorage if not found
+      if (!userProfileName) {
+        const savedImage = await AsyncStorage.getItem('coachProfileImage');
+        const savedName = await AsyncStorage.getItem('coachName');
+        const savedTitle = await AsyncStorage.getItem('coachTitle');
+        if (savedImage) setProfileImage(savedImage);
+        if (savedName) setCoachName(savedName);
+        if (savedTitle) setCoachTitle(savedTitle);
+      }
     })();
   }, []);
 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
-      setLoadingData(true);
+      // removed loadingData
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData?.user?.id) {
-        setLoadingData(false);
+        // removed loadingData
         return;
       }
 
@@ -298,7 +321,7 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
         .eq('user_id', userId)
         .maybeSingle();
 
-      let assignmentRows: Array<{ client_user_id: string; expires_at: string | null }> = [];
+      let assignmentRows: { client_user_id: string; expires_at: string | null }[] = [];
       if (coach?.id) {
         const { data: assignments } = await supabase
           .from('coach_client_assignments')
@@ -357,7 +380,7 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
           { label: 'Years Experience', value: yearsExp > 0 ? String(yearsExp) : '—', unit: yearsExp > 0 ? 'yrs' : undefined, icon: ClockIcon },
           { label: 'Rating', value: String(displayRating), unit: '★', icon: StarIcon },
         ]);
-        setLoadingData(false);
+        // removed loadingData
       }
     };
 
@@ -470,8 +493,10 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-        if (asset.mimeType && !ALLOWED_MIME_TYPES.has(asset.mimeType)) {
-          alert('Only images (JPEG, PNG) are allowed.');
+        const mimeType: string | undefined = typeof asset.mimeType === 'string' ? asset.mimeType : undefined;
+        const fileName: string | undefined = typeof asset.fileName === 'string' ? asset.fileName : undefined;
+        if (!isAllowedImageType(mimeType, fileName)) {
+          alert('Only images (JPEG, PNG, WEBP, HEIC, AVIF) are allowed.');
           return;
         }
         if (asset.fileSize && asset.fileSize > MAX_FILE_SIZE_MB * 1024 * 1024) {
@@ -479,22 +504,20 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
           alert(`File too large (${sizeMB}MB). Maximum size is ${MAX_FILE_SIZE_MB}MB.`);
           return;
         }
-        
         // Upload to Supabase Storage to avoid localStorage quota
         const uri = asset.uri;
         const publicUrl = await uploadImageToSupabase(uri, 'profile-images');
-        
         if (publicUrl) {
           setProfileImage(publicUrl);
           // Store only the URL, not base64 data
           await AsyncStorage.setItem('coachProfileImage', publicUrl);
         } else {
-          alert('Failed to upload image. Please try again.');
+          alert('Failed to upload image. Please try again. (See console for details)');
         }
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      alert('Failed to upload image. Please try again.');
+      alert('Failed to upload image. Please try again. (See console for details)');
     }
   };
 
@@ -504,7 +527,7 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
       return;
     }
     if (!ALLOWED_MIME_TYPES.has(file.type)) {
-      alert('Only images (JPEG, PNG) are allowed.');
+      alert('Only images (JPEG, PNG, WEBP, HEIC, AVIF) are allowed.');
       return;
     }
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
@@ -579,8 +602,10 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
         setIsUploading(null);
         return;
       }
-      if (asset.mimeType && !ALLOWED_MIME_TYPES.has(asset.mimeType)) {
-        alert('Only images (JPEG, PNG) and videos (MP4, MOV, WebM) are allowed.');
+      const mimeType: string | undefined = typeof asset.mimeType === 'string' ? asset.mimeType : undefined;
+      const fileName: string | undefined = typeof asset.fileName === 'string' ? asset.fileName : undefined;
+      if (!isAllowedImageType(mimeType, fileName)) {
+        alert('Only images (JPEG, PNG, WEBP, HEIC, AVIF) are allowed.');
         setIsUploading(null);
         return;
       }
@@ -672,6 +697,7 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
             {/* Name and Title */}
             <View style={styles.profileInfo}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                {/* Show the user-provided name beside the profile picture */}
                 <Text style={styles.profileName}>{coachName}</Text>
                 <TouchableOpacity
                   onPress={() => {

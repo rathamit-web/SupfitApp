@@ -14,13 +14,24 @@ import supabase from '../../shared/supabaseClient';
 
 // Helper for file input error handling (must be at true module scope for linter)
 
-const ALLOWED_MIME_TYPES = new Set([
+// Globally accepted image types (Meta/Google/Apple standard)
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
   'image/jpeg',
   'image/png',
-  'video/mp4',
-  'video/quicktime',
-  'video/webm'
+  'image/webp',
+  'image/heic',
+  'image/avif',
 ]);
+
+function isAllowedImageType(mimeType: string | undefined, fileName?: string): boolean {
+  if (mimeType && ALLOWED_IMAGE_MIME_TYPES.has(mimeType)) return true;
+  // Fallback: check extension if mimeType is missing (some Android/older pickers)
+  if (fileName) {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    return ['jpg','jpeg','png','webp','heic','avif'].includes(ext || '');
+  }
+  return false;
+}
 const MAX_FILE_SIZE_MB = 10;
 
 const BoltIcon = React.memo(() => <MaterialIcons name="bolt" size={24} color="#ff3c20" />);
@@ -60,9 +71,10 @@ async function uploadImageToSupabase(uri: string, folder: string = 'profile-imag
       blob = await response.blob();
     }
 
-    // Upload to Supabase Storage
+    // Use 'User Uploads' bucket for workout images/videos
+    const bucket = folder === 'profile-images' ? 'Avatars' : 'User Uploads';
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('images')
+      .from(bucket)
       .upload(filePath, blob, {
         contentType: 'image/jpeg',
         upsert: false,
@@ -75,7 +87,7 @@ async function uploadImageToSupabase(uri: string, folder: string = 'profile-imag
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('images')
+      .from(bucket)
       .getPublicUrl(filePath);
 
     return publicUrl;
@@ -256,8 +268,8 @@ function IndividualUserHomeScreen({ navigation, route }: any) {
         return;
       }
       const asset = result.assets[0];
-      if (asset.mimeType && !ALLOWED_MIME_TYPES.has(asset.mimeType)) {
-        alert('Only images (JPEG, PNG) and videos (MP4, MOV, WebM) are allowed.');
+      if (!isAllowedImageType(asset.mimeType, asset.fileName)) {
+        alert('Only images (JPEG, PNG, WEBP, HEIC, AVIF) are allowed.');
         setIsUploading(false);
         return;
       }
@@ -267,10 +279,8 @@ function IndividualUserHomeScreen({ navigation, route }: any) {
         setIsUploading(false);
         return;
       }
-      
       // Upload to Supabase Storage to avoid localStorage quota
       const publicUrl = await uploadImageToSupabase(asset.uri, 'profile-images');
-      
       if (publicUrl) {
         setProfileImage(publicUrl);
         showSuccessToast('✓ Profile picture updated');

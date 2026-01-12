@@ -1,14 +1,13 @@
-import {
-  Activity,
-  Target,
-  Users,
-  Shield,
-  Sparkles,
-  UserCheck,
-  ChevronRight,
-  type LucideIcon,
-} from 'lucide-react';
-import supfitLogo from '@/assets/Supfitlogo.png';
+import React, { Suspense, lazy } from 'react';
+const Activity = lazy(() => import('lucide-react').then(m => ({ default: m.Activity })));
+const Target = lazy(() => import('lucide-react').then(m => ({ default: m.Target })));
+const Users = lazy(() => import('lucide-react').then(m => ({ default: m.Users })));
+const Shield = lazy(() => import('lucide-react').then(m => ({ default: m.Shield })));
+const Sparkles = lazy(() => import('lucide-react').then(m => ({ default: m.Sparkles })));
+const UserCheck = lazy(() => import('lucide-react').then(m => ({ default: m.UserCheck })));
+const ChevronRight = lazy(() => import('lucide-react').then(m => ({ default: m.ChevronRight })));
+import type { LucideIcon } from 'lucide-react';
+const SupfitLogo = lazy(() => import('@/assets/Supfitlogo.png').then(m => ({ default: m.default || m })));
 // Auth page design tokens
 const landingBg = 'linear-gradient(135deg, #e0e7ff 0%, #f5d0fe 100%)';
 const glassCardStyle = {
@@ -36,47 +35,49 @@ type FeatureCardProps = {
 };
 
 const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => (
-  <div
-    className="group relative rounded-lg glass-card glass-card-hover hover-lift cursor-pointer"
-    style={{
-      padding: spacing[14],
-      background: 'rgba(255, 255, 255, 0.7)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      border: '1px solid rgba(0, 0, 0, 0.08)',
-      borderRadius: borderRadius.lg,
-      boxShadow: shadows.sm,
-    }}
-  >
-    <div className="relative z-10 flex flex-col items-center text-center" style={{ gap: spacing[10] }}>
-      <div
-        className="flex items-center justify-center rounded-full"
-        style={{
-          height: `${32}px`,
-          width: `${32}px`,
-          background: colors.primary,
-          border: `1px solid ${colors.primary}`,
-        }}
-      >
-        <Icon style={{ height: '16px', width: '16px', color: '#fff' }} />
-      </div>
-      <div>
-        <h3 style={{ fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.sm, lineHeight: '1.2' }}>
-          {title}
-        </h3>
-        <p
+  <Suspense fallback={<div style={{ height: 48 }} />}> 
+    <div
+      className="group relative rounded-lg glass-card glass-card-hover hover-lift cursor-pointer"
+      style={{
+        padding: spacing[14],
+        background: 'rgba(255, 255, 255, 0.7)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid rgba(0, 0, 0, 0.08)',
+        borderRadius: borderRadius.lg,
+        boxShadow: shadows.sm,
+      }}
+    >
+      <div className="relative z-10 flex flex-col items-center text-center" style={{ gap: spacing[10] }}>
+        <div
+          className="flex items-center justify-center rounded-full"
           style={{
-            fontSize: typography.fontSize.xs,
-            marginTop: spacing[4],
-            color: colors.text.secondary,
-            lineHeight: '1.4',
+            height: `${32}px`,
+            width: `${32}px`,
+            background: colors.primary,
+            border: `1px solid ${colors.primary}`,
           }}
         >
-          {description}
-        </p>
+          <Icon style={{ height: '16px', width: '16px', color: '#fff' }} />
+        </div>
+        <div>
+          <h3 style={{ fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.sm, lineHeight: '1.2' }}>
+            {title}
+          </h3>
+          <p
+            style={{
+              fontSize: typography.fontSize.xs,
+              marginTop: spacing[4],
+              color: colors.text.secondary,
+              lineHeight: '1.4',
+            }}
+          >
+            {description}
+          </p>
+        </div>
       </div>
     </div>
-  </div>
+  </Suspense>
 );
 
 type RoleCardProps = {
@@ -91,80 +92,82 @@ const RoleCard = ({ icon: Icon, title, description, buttonText, role }: RoleCard
   const navigate = useNavigate();
   const to = role === 'coach' ? '/auth?role=coach' : '/auth';
   return (
-    <button
-      type="button"
-      onClick={() => {
-        localStorage.setItem('userRole', role === 'coach' ? 'coach' : 'individual');
-        navigate(to);
-      }}
-      style={{
-        width: '100%',
-        height: '80px',
-        background: colors.primary,
-        border: `1.5px solid ${colors.primary}1a`,
-        borderRadius: borderRadius.lg,
-        boxShadow: shadows.sm,
-        cursor: 'pointer',
-        marginBottom: spacing[12],
-        display: 'flex',
-        alignItems: 'center',
-        gap: spacing[18],
-        padding: `${spacing[20]} ${spacing[18]}`,
-        transition: 'all 0.3s ease',
-        position: 'relative',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = shadows.md;
-        (e.currentTarget.style as CSSStyleDeclaration).borderColor = `${colors.primary}2d`;
-        e.currentTarget.style.transform = 'translateY(-2px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = shadows.sm;
-        (e.currentTarget.style as any).borderColor = `${colors.primary}1a`;
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
-    >
-      <div
+    <Suspense fallback={<button style={{ height: 80, width: '100%' }} disabled />}> 
+      <button
+        type="button"
+        onClick={() => {
+          localStorage.setItem('userRole', role === 'coach' ? 'coach' : 'individual');
+          navigate(to);
+        }}
         style={{
-          minWidth: '40px',
-          minHeight: '40px',
-          borderRadius: borderRadius.md,
-          background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
+          width: '100%',
+          height: '80px',
+          background: colors.primary,
+          border: `1.5px solid ${colors.primary}1a`,
+          borderRadius: borderRadius.lg,
+          boxShadow: shadows.sm,
+          cursor: 'pointer',
+          marginBottom: spacing[12],
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
+          gap: spacing[18],
+          padding: `${spacing[20]} ${spacing[18]}`,
+          transition: 'all 0.3s ease',
+          position: 'relative',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = shadows.md;
+          (e.currentTarget.style as CSSStyleDeclaration).borderColor = `${colors.primary}2d`;
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = shadows.sm;
+          (e.currentTarget.style as any).borderColor = `${colors.primary}1a`;
+          e.currentTarget.style.transform = 'translateY(0)';
         }}
       >
-        <Icon style={{ width: '20px', height: '20px', color: '#fff' }} />
-      </div>
-      <div style={{ flex: 1, textAlign: 'left' }}>
         <div
           style={{
-            fontWeight: 600,
-            fontSize: 20,
-            color: '#ffffff',
-            fontFamily: typography.fontFamily.system,
+            minWidth: '40px',
+            minHeight: '40px',
+            borderRadius: borderRadius.md,
+            background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
           }}
         >
-          {title}
+          <Icon style={{ width: '20px', height: '20px', color: '#fff' }} />
         </div>
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 400,
-            color: '#ffffff',
-            marginTop: spacing[2],
-            fontFamily: typography.fontFamily.system,
-          }}
-        >
-          {role === 'individual'
-            ? 'AI-powered fitness tracking'
-            : 'Grow your fitness business with Supfit'}
+        <div style={{ flex: 1, textAlign: 'left' }}>
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: 20,
+              color: '#ffffff',
+              fontFamily: typography.fontFamily.system,
+            }}
+          >
+            {title}
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 400,
+              color: '#ffffff',
+              marginTop: spacing[2],
+              fontFamily: typography.fontFamily.system,
+            }}
+          >
+            {role === 'individual'
+              ? 'AI-powered fitness tracking'
+              : 'Grow your fitness business with Supfit'}
+          </div>
         </div>
-      </div>
-      <ChevronRight style={{ width: '24px', height: '24px', color: '#ffffff', flexShrink: 0 }} />
-    </button>
+        <ChevronRight style={{ width: '24px', height: '24px', color: '#ffffff', flexShrink: 0 }} />
+      </button>
+    </Suspense>
   );
 };
 
@@ -193,36 +196,39 @@ export default function Landing() {
   ];
 
   return (
-    <div
-      className="min-h-screen w-full flex items-center justify-center"
-      style={{
-        minHeight: '100vh',
-        fontFamily: 'SF Pro Display, SF Pro Text, Roboto, Arial, sans-serif',
-        background: landingBg,
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      <div style={glassCardStyle}>
-        {/* Logo centered at top */}
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', marginBottom: 0, marginTop: 0 }}>
-          <img
-            src={supfitLogo}
-            alt="SupFit"
-            style={{
-              width: '150px',
-              maxWidth: '60vw',
-              height: 'auto',
-              background: 'transparent',
-              borderRadius: 0,
-              boxShadow: 'none',
-              filter: 'drop-shadow(0 2px 12px #ff3c2066)',
-              margin: 0,
-              verticalAlign: 'middle',
-              display: 'block',
-            }}
-          />
-        </div>
+    <Suspense fallback={<div>Loading...</div>}>
+      <div
+        className="min-h-screen w-full flex items-center justify-center"
+        style={{
+          minHeight: '100vh',
+          fontFamily: 'SF Pro Display, SF Pro Text, Roboto, Arial, sans-serif',
+          background: landingBg,
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div style={glassCardStyle}>
+          {/* Logo centered at top */}
+          <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', marginBottom: 0, marginTop: 0 }}>
+            <Suspense fallback={<div style={{ height: 80 }} />}> 
+              <img
+                src={require('@/assets/Supfitlogo.png')}
+                alt="SupFit"
+                style={{
+                  width: '150px',
+                  maxWidth: '60vw',
+                  height: 'auto',
+                  background: 'transparent',
+                  borderRadius: 0,
+                  boxShadow: 'none',
+                  filter: 'drop-shadow(0 2px 12px #ff3c2066)',
+                  margin: 0,
+                  verticalAlign: 'middle',
+                  display: 'block',
+                }}
+              />
+            </Suspense>
+          </div>
         {/* Title & Subtitle */}
         <div className="text-center" style={{ marginBottom: 0, marginTop: 12 }}>
           <h1
