@@ -1,5 +1,13 @@
 # AI Plan Generation - Database & Deployment Setup
 
+## Daily Active Hours (New)
+
+- Migration: `supabase/migrations/20260122090000_active_hours_mcp/20260122_active_hours_mcp.sql`
+- Migration (consent): `supabase/migrations/20260122121000_active_hours_consent/20260122_active_hours_consent.sql`
+- Edge Function: `supabase/functions/ingest-active-hours`
+- Edge Function (consent): `supabase/functions/set-active-hours-consent`
+- Notes: This stores **derived daily totals only** in `public.active_hours` (no raw samples). See `ACTIVE_HOURS_PIPELINE.md`.
+
 ## 1. Create Database Tables
 
 ### Diet Plans Table

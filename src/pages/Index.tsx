@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -66,15 +67,16 @@ const Index = () => {
   const [uploadingProfile, setUploadingProfile] = useState(false);
   const [uploadingPosts, setUploadingPosts] = useState<Record<number, boolean>>({});
 
-  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
-  const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png']);
+  const MAX_MEDIA_SIZE = 50 * 1024 * 1024; // 50MB for video
+  const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
+  const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 
-  const validateImage = (file: File): string | null => {
-    if (!ALLOWED_TYPES.has(file.type)) {
-      return 'Only JPEG or PNG files are allowed.';
+  const validateMedia = (file: File): string | null => {
+    if (![...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES].includes(file.type)) {
+      return 'Only JPEG, PNG images or MP4, WebM, MOV videos are allowed.';
     }
-    if (file.size > MAX_IMAGE_SIZE) {
-      return 'File too large. Maximum size is 10 MB.';
+    if (file.size > MAX_MEDIA_SIZE) {
+      return 'File too large. Maximum size is 50 MB.';
     }
     return null;
   };
@@ -135,46 +137,40 @@ const Index = () => {
     { label: 'Sleep', value: '7h 20m', icon: Moon, gradient: 'from-indigo-400 to-purple-400' },
   ];
 
-  const [posts, setPosts] = useState(() => {
-    const savedPosts = localStorage.getItem('workoutPosts');
-    if (savedPosts) {
-      return JSON.parse(savedPosts);
-    }
-    return [
-      {
-        id: 1,
-        image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80',
-        likes: 234,
-        comments: 12,
-        caption: 'Morning cardio session 💪 Crushed 10K!',
-        workout: 'Running',
-      },
-      {
-        id: 2,
-        image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
-        likes: 189,
-        comments: 8,
-        caption: 'Leg day hits different 🔥',
-        workout: 'Strength',
-      },
-      {
-        id: 3,
-        image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80',
-        likes: 312,
-        comments: 15,
-        caption: 'New PR on deadlifts! 💯',
-        workout: 'Powerlifting',
-      },
-      {
-        id: 4,
-        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80',
-        likes: 276,
-        comments: 19,
-        caption: 'Yoga flow to end the week 🧘',
-        workout: 'Yoga',
-      },
-    ];
-  });
+  // Posts from user_workouts
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data?.user?.id || null);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    setLoadingPosts(true);
+    supabase
+      .from('user_workouts')
+      .select('id, user_id, media_type, media_url, thumbnail_url, caption, workout, created_at')
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setPosts(data.map((item: any) => ({
+            id: item.id,
+            mediaType: item.media_type,
+            url: item.media_url,
+            thumbnail: item.thumbnail_url,
+            uploadedAt: item.created_at,
+            caption: item.caption || '',
+            workout: item.workout || '',
+            userId: item.user_id,
+          })));
+        }
+        setLoadingPosts(false);
+      });
+  }, [userId]);
 
   const [editingPost, setEditingPost] = useState<number | null>(null);
   const [editCaption, setEditCaption] = useState('');
@@ -184,28 +180,63 @@ const Index = () => {
   const [showLikesModal, setShowLikesModal] = useState<number | null>(null);
   const [showCommentsModal, setShowCommentsModal] = useState<number | null>(null);
 
-  const handleWorkoutImageChange = (postId: number, file: File) => {
-    const err = validateImage(file);
+  // Upload image or video to Supabase Storage and update user_workouts row
+  const handleWorkoutMediaChange = async (postId: number, file: File) => {
+    const err = validateMedia(file);
     if (err) {
       toast.error(err);
       return;
     }
+    if (!userId) {
+      toast.error('User not authenticated');
+      return;
+    }
     setUploadingPosts((prev) => ({ ...prev, [postId]: true }));
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const updatedPosts = posts.map((post) =>
-        post.id === postId ? { ...post, image: reader.result as string } : post,
-      );
-      setPosts(updatedPosts);
-      localStorage.setItem('workoutPosts', JSON.stringify(updatedPosts));
+    try {
+      const ext = file.name.split('.').pop();
+      const isVideo = ALLOWED_VIDEO_TYPES.has(file.type);
+      const bucket = 'user-uploads';
+      const filePath = `${userId}/${Date.now()}_${postId}.${ext}`;
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, file, {
+        contentType: file.type,
+        upsert: true,
+      });
+      if (uploadError) throw uploadError;
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      if (!publicUrlData?.publicUrl) throw new Error('Failed to get public URL');
+      // Update user_workouts row
+      const { error: dbError } = await supabase.from('user_workouts').update({
+        media_type: isVideo ? 'video' : 'image',
+        media_url: publicUrlData.publicUrl,
+      }).eq('id', postId);
+      if (dbError) throw dbError;
+      toast.success(isVideo ? 'Workout video updated' : 'Workout image updated');
+      // Refresh posts
+      supabase
+        .from('user_workouts')
+        .select('id, user_id, media_type, media_url, thumbnail_url, caption, workout, created_at')
+        .order('created_at', { ascending: false })
+        .then(({ data, error }) => {
+          if (!error && data) {
+            setPosts(data.map((item: any) => ({
+              id: item.id,
+              mediaType: item.media_type,
+              url: item.media_url,
+              thumbnail: item.thumbnail_url,
+              uploadedAt: item.created_at,
+              caption: item.caption || '',
+              workout: item.workout || '',
+              userId: item.user_id,
+            })));
+          }
+        });
+    } catch (e: any) {
+      toast.error('Upload failed: ' + (e?.message || 'Unknown error'));
+    } finally {
       setUploadingPosts((prev) => ({ ...prev, [postId]: false }));
-      toast.success('Workout image updated');
-    };
-    reader.onerror = () => {
-      toast.error('Failed to process the image. Please try again.');
-      setUploadingPosts((prev) => ({ ...prev, [postId]: false }));
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleEditPost = (postId: number) => {

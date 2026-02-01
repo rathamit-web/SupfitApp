@@ -3,6 +3,9 @@
 ## Overview
 Coaches can upload large images and videos for the Recent Training section. To ensure fast, reliable delivery and optimal user experience, all uploaded media is optimized on the backend before being served to users.
 
+## Daily Active Hours (Derived-only)
+See `ACTIVE_HOURS_PIPELINE.md` for the privacy-first daily totals pipeline (`public.active_hours` + `ingest-active-hours`).
+
 ## Backend Optimization Flow
 1. **Upload**: User uploads image/video to Supabase Storage (images/videos bucket).
 2. **Trigger**: Supabase Edge Function or Storage Function is triggered on upload.

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import Svg, { Path } from 'react-native-svg';
 // Inline the correct RevenueTracker SVG path (Regular-L) using react-native-svg, scaled and centered for 24x24 alignment
 
 
@@ -16,10 +17,6 @@ interface IconProps {
   readonly size?: number;
   readonly active?: boolean;
 }
-
-
-import Svg, { Path } from 'react-native-svg';
-
 // Inline Home SVG as a React Native SVG component (from HomeIcon.svg)
 const HomeIcon = React.memo(({ color = '#6e6e73', size = 26, active = false }: IconProps) => (
   <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -66,6 +63,19 @@ const RevenueTrackerIcon = React.memo(({ color = '#ff3c20', size = 26, active = 
   </View>
 ));
 RevenueTrackerIcon.displayName = 'RevenueTrackerIcon';
+
+// Inline CardMembership SVG as a React Native SVG component
+const CardMembershipIcon = React.memo(({ color = '#6e6e73', size = 26, active = false }: IconProps) => (
+  <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path 
+        d="M20 8H4C2.9 8 2.01 8.9 2.01 10L2 20C2 21.1 2.9 22 4 22H20C21.1 22 22 21.1 22 20V10C22 8.9 21.1 8 20 8ZM20 20H4V10H20V20ZM6 13H12V19H6Z" 
+        fill={active ? '#ff3c20' : color} 
+      />
+    </Svg>
+  </View>
+));
+CardMembershipIcon.displayName = 'CardMembershipIcon';
 
 const TAB_HEIGHT = 64;
 
@@ -214,6 +224,18 @@ export default function FooterNav({ mode = 'user', navigation: navProp, currentR
             tintColor: isActive('Testimonials') ? '#ff3c20' : '#6e6e73',
           }}
           resizeMode="contain"
+        />
+      </Pressable>
+      <Pressable
+        style={[styles.iconBtn, styles.iconBtnFlex, isActive('CoachSubscription') && styles.iconBtnActive]}
+        accessibilityRole="button"
+        accessibilityLabel="Subscription"
+        onPress={() => onNavigate('CoachSubscription')}
+      >
+        <CardMembershipIcon
+          color={isActive('CoachSubscription') ? '#ff3c20' : '#6e6e73'}
+          size={22}
+          active={isActive('CoachSubscription')}
         />
       </Pressable>
     </View>

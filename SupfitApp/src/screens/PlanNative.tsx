@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Platform, Pressable, Dimensions, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Dimensions, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import FooterNav from '../components/FooterNav';
@@ -138,7 +138,7 @@ const PlanNative = ({ navigation }: any) => {
   const [showGeneratedPlanModal, setShowGeneratedPlanModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [useRealAI, setUseRealAI] = useState(true); // Toggle: true = Google Gemini AI, false = Mock AI
+  const [useRealAI] = useState(true); // Toggle: true = Google Gemini AI, false = Mock AI
   
   const [userHealthData, setUserHealthData] = useState<UserHealthData>({
     bmi: null,
@@ -474,45 +474,6 @@ const PlanNative = ({ navigation }: any) => {
     setShowPreferencesModal(true);
   };
 
-  // Footer styles (copied from IndividualUserHome)
-  const footerStyles = StyleSheet.create({
-    footerContainer: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      height: 64,
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      backgroundColor: Platform.OS === 'ios' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.92)',
-      borderTopWidth: 0.5,
-      borderColor: '#e5e5ea',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      marginBottom: 16,
-    },
-    iconBtn: {
-      padding: 12,
-      borderRadius: 12,
-      backgroundColor: 'transparent',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginHorizontal: 2,
-    },
-    iconBtnActive: {
-      backgroundColor: 'rgba(255,60,32,0.08)',
-    },
-    iconShadow: {
-      shadowColor: '#ff3c20',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 6,
-    },
-  });
-
   // Render Preferences Modal
   const renderPreferencesModal = () => (
     <Modal
@@ -526,7 +487,7 @@ const PlanNative = ({ navigation }: any) => {
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={modalStyles.modalTitle}>AI Workout Plan Generator</Text>
             <Text style={modalStyles.modalSubtitle}>
-              We'll create a personalized plan based on your health and preferences
+              We&apos;ll create a personalized plan based on your health and preferences
             </Text>
 
             {/* Health Information Display */}

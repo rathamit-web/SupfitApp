@@ -20,6 +20,7 @@ import WorkoutPlanNative from '../screens/WorkoutPlanNative';
 import DietPlanNative from '../screens/DietPlanNative';
 import ScheduleSessionNative from '../screens/ScheduleSessionNative';
 import TestimonialsNative from '../screens/TestimonialsNative';
+import CoachSubscriptionNative from '../screens/CoachSubscriptionNative';
 
 // Navigation param list for type safety
 export type RootStackParamList = {
@@ -44,6 +45,7 @@ export type RootStackParamList = {
   DietPlanNative: { clientId?: number } | undefined;
   ScheduleSession: { clientId?: number } | undefined;
   Testimonials: undefined;
+  CoachSubscription: undefined;
 };
 
 const Stack = createStackNavigator();
@@ -155,6 +157,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="Testimonials"
         component={TestimonialsNative}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="CoachSubscription"
+        component={CoachSubscriptionNative}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

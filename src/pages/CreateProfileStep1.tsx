@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabaseClient';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import supfitLogo from '../assets/Supfitlogo.png';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,9 +34,43 @@ const CreateProfileStep1 = () => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
 
-	const handleSubmit = () => {
+	const handleSubmit = async () => {
+		// Require name
+		if (!formData.name || formData.name.trim().length === 0) {
+			toast.error('Please enter your full name.');
+			return;
+		}
+
+		// Save to localStorage for legacy/local flows
 		localStorage.setItem('userProfile', JSON.stringify(formData));
 		localStorage.setItem('profileCreated', 'true');
+
+		// Save to Supabase user_profiles (upsert)
+		try {
+			const user = supabase.auth.getUser ? (await supabase.auth.getUser()).data.user : null;
+			const userId = user?.id || user?.sub || null;
+			if (!userId) {
+				toast.error('Could not determine user ID. Please log in again.');
+				return;
+			}
+			const payload = {
+				id: userId,
+				full_name: formData.name,
+				gender: formData.gender,
+				// add other fields as needed
+			};
+			const { error } = await supabase.from('user_profiles').upsert(payload);
+			if (error) {
+				toast.error('Failed to save profile. Please try again.');
+				console.error('Supabase upsert error:', error, 'Payload:', payload);
+				return;
+			}
+		} catch (err) {
+			toast.error('Unexpected error saving profile.');
+			console.error('Profile upsert exception:', err);
+			return;
+		}
+
 		if (role === 'coach') navigate('/coach-home');
 		else navigate('/home');
 	};

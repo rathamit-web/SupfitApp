@@ -22,7 +22,10 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught:', error, errorInfo);
+    // Avoid console.error to prevent LogBox/stack overlays for recoverable errors.
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.log('ErrorBoundary caught:', error?.message || String(error));
+    }
     
     // Handle ImagePicker unsupported file type errors
     const errorMsg = String(error?.message || error || '');
@@ -52,13 +55,13 @@ class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError && this.state.error) {
       const errorMsg = String(this.state.error?.message || '');
       
-      // For ImagePicker errors, return null to hide error screen
+      // For ImagePicker-type errors, keep rendering children (we reset state shortly after).
       if (errorMsg.toLowerCase().includes('unsupported') || 
           errorMsg.includes('Only images') ||
           errorMsg.includes('application/') ||
           errorMsg.includes('document') ||
           errorMsg.includes('wordprocessing')) {
-        return null;
+        return this.props.children;
       }
       
       // For other errors, show error screen

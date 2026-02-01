@@ -4,14 +4,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 // Custom Revenue Icon with green bars and white arrow
 const RevenueIcon = ({ isActive }: { isActive: boolean }) => (
   <div
-    className={`relative w-8 h-8 rounded-xl bg-gradient-to-br from-blue-200/80 to-blue-300/60 backdrop-blur-md shadow-[0_2px_8px_rgba(59,130,246,0.3),inset_0_1px_0_rgba(255,255,255,0.6)] border border-white/40 flex items-end justify-center p-1.5 gap-0.5 transition-all duration-300 ${isActive ? 'scale-110 shadow-[0_4px_12px_rgba(59,130,246,0.4),inset_0_1px_0_rgba(255,255,255,0.8)]' : ''}`}
+    className={`relative w-6 h-6 rounded-xl bg-gradient-to-br from-blue-200/80 to-blue-300/60 backdrop-blur-md shadow-[0_2px_8px_rgba(59,130,246,0.25),inset_0_1px_0_rgba(255,255,255,0.6)] border border-white/40 flex items-center justify-center p-1 transition-all duration-300 ${isActive ? 'scale-110 shadow-[0_4px_12px_rgba(59,130,246,0.35),inset_0_1px_0_rgba(255,255,255,0.85)]' : ''}`}
   >
-    {/* Green bars */}
-    <div className="w-1.5 h-2 bg-green-500 rounded-sm" />
-    <div className="w-1.5 h-3 bg-green-500 rounded-sm" />
-    <div className="w-1.5 h-4 bg-green-500 rounded-sm" />
+    <div className="flex items-end justify-center w-full h-full gap-[2px]">
+      <div className="w-1 h-2 bg-green-500 rounded-sm" />
+      <div className="w-1 h-3 bg-green-500 rounded-sm" />
+      <div className="w-1 h-4 bg-green-500 rounded-sm" />
+    </div>
     {/* White arrow/trend line */}
-    <svg className="absolute top-1 left-1 w-6 h-4" viewBox="0 0 24 16" fill="none">
+    <svg className="absolute top-0.5 left-0.5 w-5 h-3.5" viewBox="0 0 24 16" fill="none">
       <path
         d="M2 14 L8 10 L12 12 L22 2"
         stroke="white"

@@ -5,6 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
+type CreateProfileStep1RouteParams = {
+  userType?: string;
+};
+
 const genders = [
   { label: 'Male', value: 'male' },
   { label: 'Female', value: 'female' },
@@ -12,10 +16,11 @@ const genders = [
 ];
 
 const CreateProfileStep1 = () => {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const { width, height } = Dimensions.get('window');
-  const userType = route.params?.userType || 'individual';
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { width } = Dimensions.get('window');
+  const routeParams = (route.params || {}) as CreateProfileStep1RouteParams;
+  const userType = routeParams.userType || 'individual';
   const [formData, setFormData] = useState({
     name: '',
     age: '',
@@ -23,14 +28,11 @@ const CreateProfileStep1 = () => {
     bio: '',
     avatar: '',
   });
-  const [selectedGender, setSelectedGender] = useState('');
-
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleGenderSelect = (gender: string) => {
-    setSelectedGender(gender);
     handleInputChange('gender', gender);
   };
 
@@ -59,7 +61,7 @@ const CreateProfileStep1 = () => {
               <Text style={styles.headerStep}>Step 1 of 3</Text>
             </View>
             <LinearGradient colors={["#ff3c20", "#eee"]} start={{x:0,y:0}} end={{x:1,y:0}} style={styles.progressBar} />
-            <Text style={styles.title}>Let's Get Started</Text>
+            <Text style={styles.title}>Let&apos;s Get Started</Text>
             <Text style={styles.subtitle}>Tell us a bit about yourself.</Text>
             <View style={styles.inputWrap}>
               <Text style={styles.label}>Full Name</Text>

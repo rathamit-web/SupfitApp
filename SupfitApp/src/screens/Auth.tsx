@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Dimensions, Platform, Alert } from 'react-native';
 import { useUserRole } from '../context/UserRoleContext';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
@@ -7,11 +7,34 @@ import type { RouteProp } from '@react-navigation/native';
 // Removed duplicate BlurView import
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { AntDesign, FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { AntDesign, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '../../shared/supabaseClient';
+
+// Fetch user profile from Supabase
+async function fetchUserProfileFromSupabase(userId) {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  return { profile: data, error };
+}
+
+// Log auth errors to analytics_events
+async function logAuthError(eventType, email, errorMsg) {
+  try {
+    await supabase.from('analytics_events').insert({
+      event_type: 'login',
+      event_subtype: eventType,
+      event_data: { email, error: errorMsg },
+      occurred_at: new Date().toISOString(),
+    });
+  } catch {
+    // Silent fail for logging
+  }
+}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -26,7 +49,7 @@ export default function Auth({ route, navigation }: AuthProps) {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
   const { role, setRole } = useUserRole();
-  const { signInOrSignUp, resendConfirmationEmail, loading: authLoading, error: authError, setError } = useSupabaseAuth();
+  const { signInOrSignUp, resendConfirmationEmail, loading: authLoading, error: authError } = useSupabaseAuth();
 
   // prompt variable removed (was unused)
 
@@ -67,7 +90,7 @@ export default function Auth({ route, navigation }: AuthProps) {
           }
         }
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Google sign-in failed. Please try again.');
     }
   };
@@ -124,25 +147,29 @@ export default function Auth({ route, navigation }: AuthProps) {
     if (!role) setRole(userType === 'coach' ? 'coach' : 'user');
     if (!formData.email || !formData.password) {
       Alert.alert('Missing Information', 'Please enter email and password');
+      await logAuthError('missing_info', formData.email, 'Missing email or password');
       return;
     }
-    
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       Alert.alert('Invalid Email', 'Please enter a valid email address');
+      await logAuthError('invalid_email', formData.email, 'Invalid email format');
       return;
     }
-    
+
     // Password validation for signup
     if (!isLogin && formData.password.length < 6) {
       Alert.alert('Weak Password', 'Password must be at least 6 characters long');
+      await logAuthError('weak_password', formData.email, 'Password too short');
       return;
     }
-    
+
     const result = await signInOrSignUp(formData.email.trim().toLowerCase(), formData.password, isLogin);
-    
+
     if (result.error) {
+      await logAuthError('auth_error', formData.email, result.error.message || 'Authentication failed');
       // Error is already set in the hook, but we can show specific alerts
       if (result.error.message?.includes('Invalid login credentials')) {
         Alert.alert(
@@ -178,7 +205,7 @@ export default function Auth({ route, navigation }: AuthProps) {
       }
       return;
     }
-    
+
     // Check if email confirmation is required (signup without session)
     if (!isLogin && result.data?.user && !result.data.session) {
       setShowConfirmationMessage(true);
@@ -197,16 +224,24 @@ export default function Auth({ route, navigation }: AuthProps) {
       );
       return;
     }
-    
-    // Successfully authenticated
-    if (isLogin) {
-      if ((role || userType) === 'coach') {
-        navigation.navigate('CoachHome', { userType: 'coach' });
-      } else {
-        navigation.navigate('IndividualHome', { userType: 'individual' });
+
+    // After login, fetch user profile and enforce onboarding if incomplete
+    if (isLogin && result.data?.session?.user?.id) {
+      const userId = result.data.session.user.id;
+      const { profile, error: profileError } = await fetchUserProfileFromSupabase(userId);
+      if (profileError) {
+        await logAuthError('profile_fetch', formData.email, profileError.message);
+        Alert.alert('Error', 'Could not fetch your profile. Please try again.');
+        return;
       }
-    } else {
-      // Pass role to profile creation
+      // Check for required fields (adjust as needed)
+      if (!profile?.full_name || !profile?.dob) {
+        navigation.navigate('CreateProfileStep1', { userType: role || userType });
+      } else {
+        navigation.navigate((role || userType) === 'coach' ? 'CoachHome' : 'IndividualHome', { userType: role || userType });
+      }
+    } else if (!isLogin) {
+      // Pass role to profile creation after signup
       navigation.navigate('CreateProfileStep1', { userType: role || userType });
     }
   };
@@ -388,11 +423,9 @@ const styles = StyleSheet.create({
     maxWidth: 380,
     width: width > 400 ? 360 : '100%',
     alignItems: 'center',
-    shadowColor: '#bbaaff',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
-    shadowRadius: 32,
-    elevation: 12,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 12px 32px rgba(187,170,255,0.3)' }
+      : { elevation: 12 }),
     minHeight: height < 700 ? 380 : 520, // Responsive minHeight for small screens
     justifyContent: 'flex-start',
   },
@@ -403,11 +436,9 @@ const styles = StyleSheet.create({
     marginBottom: 22,
     marginTop: 0,
     alignSelf: 'center',
-    shadowColor: '#ff3c20',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    elevation: 4,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 6px 16px rgba(255,60,32,0.22)' }
+      : { elevation: 4 }),
   },
   tabRowGlass: {
     width: '100%',
@@ -466,11 +497,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.32)',
     borderWidth: 1.2,
     borderColor: 'rgba(255,255,255,0.32)',
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 1,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 4px 12px rgba(0,0,0,0.08)' }
+      : { elevation: 1 }),
     // Remove any black/opaque background
   },
   tabBtnGlassGradient: {
@@ -480,11 +509,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     height: '100%',
-    shadowColor: '#ff3c20',
-    shadowOffset: { width: 0, height: 2 }, // reduced shadow
-    shadowOpacity: 0.14,
-    shadowRadius: 6,
-    elevation: 2,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 6px 14px rgba(255,60,32,0.18)' }
+      : { elevation: 2 }),
   },
   tabBtnGlassInactiveBg: {
     flex: 1,
@@ -501,15 +528,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#ff3c20cc',
     letterSpacing: 0.1,
-    textShadowColor: '#fff',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadow: '0px 1px 2px rgba(255,255,255,0.8)',
   },
   tabBtnGlassTextActive: {
     color: '#fff',
-    textShadowColor: '#ff3c20',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    textShadow: '0px 2px 8px rgba(255,60,32,0.36)',
   },
   form: {
     width: '100%',
@@ -538,11 +561,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
     color: '#222',
-    shadowColor: '#fff',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 2px 6px rgba(0,0,0,0.06)' }
+      : { elevation: 1 }),
   },
   submitBtn: {
     width: '100%',
@@ -550,11 +571,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
     overflow: 'hidden',
-    shadowColor: '#ff3c20',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 4,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 10px 20px rgba(255,60,32,0.22)' }
+      : { elevation: 4 }),
   },
   submitBtnGradient: {
     width: '100%',
@@ -568,9 +587,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 17,
     letterSpacing: 0.2,
-    textShadowColor: '#ff3c20',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadow: '0px 1px 2px rgba(255,60,32,0.5)',
   },
   orText: {
     color: '#bdbdbd',
@@ -604,11 +621,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     borderWidth: 1,
     borderColor: '#ececec',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 2px 6px rgba(0,0,0,0.08)' }
+      : { elevation: 2 }),
   },
   confirmationBanner: {
     flexDirection: 'row',

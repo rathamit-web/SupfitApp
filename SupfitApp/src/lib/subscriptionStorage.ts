@@ -7,25 +7,29 @@ export const SUBSCRIPTION_KEYS = {
   dietician: 'dieticianSubscription',
 };
 
-export async function saveSubscription(type, data) {
+export type SubscriptionType = keyof typeof SUBSCRIPTION_KEYS;
+
+export async function saveSubscription(type: SubscriptionType, data: unknown) {
   try {
     await AsyncStorage.setItem(SUBSCRIPTION_KEYS[type], JSON.stringify(data));
-  } catch (e) {
-    // handle error
+  } catch {
+    // Best-effort persistence; ignore failures.
   }
 }
 
-export async function getSubscription(type) {
+export async function getSubscription<T = unknown>(type: SubscriptionType): Promise<T | null> {
   try {
     const value = await AsyncStorage.getItem(SUBSCRIPTION_KEYS[type]);
-    return value ? JSON.parse(value) : null;
-  } catch (e) {
+    return value ? (JSON.parse(value) as T) : null;
+  } catch {
     return null;
   }
 }
 
-export async function clearSubscription(type) {
+export async function clearSubscription(type: SubscriptionType) {
   try {
     await AsyncStorage.removeItem(SUBSCRIPTION_KEYS[type]);
-  } catch (e) {}
+  } catch {
+    // Ignore
+  }
 }

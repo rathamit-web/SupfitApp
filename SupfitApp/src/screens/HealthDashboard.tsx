@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Pressable, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { supabase } from '../lib/supabaseClient';
 import { ENABLE_PURPOSED_VITALS, DEFAULT_VITAL_PURPOSE } from '../config/privacy';
 import { auditEvent } from '../lib/audit';
@@ -480,49 +480,6 @@ const HealthDashboard = ({ navigation }: any) => {
     </LinearGradient>
   );
 };
-
-// Footer styles (copied from IndividualUserHome)
-const footerStyles = StyleSheet.create({
-  footerContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 64,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: Platform.OS === 'ios' ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.92)',
-    borderTopWidth: 0.5,
-    borderColor: '#e5e5ea',
-    ...(Platform.OS === 'web'
-      ? { boxShadow: '0px -4px 12px rgba(0,0,0,0.08)' }
-      : {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-        }),
-    marginBottom: 16,
-  },
-  iconBtn: {
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 2,
-  },
-  iconBtnActive: {
-    backgroundColor: 'rgba(255,60,32,0.08)',
-  },
-  iconShadow: {
-    shadowColor: '#ff3c20',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-  },
-});
 
 const styles = StyleSheet.create({
   container: { padding: 0, paddingBottom: 110 },

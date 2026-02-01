@@ -1,3 +1,6 @@
+import { supabase } from './supabaseClient';
+import { AUDIT_ENABLED } from '../config/privacy';
+
 export type AuditAction = 'create' | 'update' | 'delete' | 'read';
 
 interface AuditEvent {
@@ -8,15 +11,11 @@ interface AuditEvent {
   purpose?: string;
   metadata?: Record<string, unknown>;
 }
-import { supabase } from './supabaseClient';
-import { AUDIT_ENABLED } from '../config/privacy';
-
 
 export async function auditEvent(event: AuditEvent) {
   if (!AUDIT_ENABLED) return;
   // Placeholder: when backend is ready, replace with a Supabase RPC or insert into audit_log.
   // Keeping console logging minimal to avoid leaking sensitive data in production logs.
-  // eslint-disable-next-line no-console
   console.log('AUDIT_EVENT', {
     action: event.action,
     table: event.table,
@@ -34,9 +33,8 @@ export async function auditEvent(event: AuditEvent) {
       purpose: event.purpose,
       metadata: event.metadata ?? null,
     });
-  } catch (err) {
+  } catch {
     // Fallback to minimal log to avoid throwing in user flows.
-    // eslint-disable-next-line no-console
     console.log('AUDIT_FALLBACK', {
       action: event.action,
       table: event.table,

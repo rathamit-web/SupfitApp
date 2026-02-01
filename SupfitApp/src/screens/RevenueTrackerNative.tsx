@@ -175,16 +175,43 @@ function RevenueTrackerScreen({ navigation }: any) {
       const currentYear = now.getFullYear();
       const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-      // Query clients added in current or last month
+      // Get current coach id
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData?.user?.id) {
+        setNewClients([]);
+        return;
+      }
+      const userId = authData.user.id;
+      // Fetch coach row for this user (RLS safe)
+      const { data: coachRows, error: coachError } = await supabase
+        .from('coaches')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (coachError || !coachRows?.id) {
+        setNewClients([]);
+        return;
+      }
+      const coachId = coachRows.id;
+
+      // Query coach_clients for new clients (joined with users for name/avatar)
       const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .or(`and(added_month.eq.${currentMonth},added_year.eq.${currentYear}),and(added_month.eq.${lastMonth},added_year.eq.${lastMonthYear})`);
+        .from('coach_clients')
+        .select('client_id, start_date, users:client_id(full_name, avatar_url)')
+        .eq('coach_id', coachId)
+        .or(`and(extract(month from start_date).eq.${currentMonth},extract(year from start_date).eq.${currentYear}),and(extract(month from start_date).eq.${lastMonth},extract(year from start_date).eq.${lastMonthYear})`);
       if (error) {
         console.error('Error fetching new clients:', error);
         setNewClients([]);
       } else {
-        setNewClients(data || []);
+        // Map to UI shape
+        const mapped = (data || []).map((row: any) => ({
+          id: row.client_id,
+          name: row.users?.full_name || 'Client',
+          revenue: '', // Fill with actual revenue if available
+          avatar: row.users?.avatar_url || '',
+        }));
+        setNewClients(mapped);
       }
     }
     fetchNewClients();

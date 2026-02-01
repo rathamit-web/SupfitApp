@@ -59,7 +59,11 @@ class SecureStoreAdapter {
   }
 }
 
-const clientOptions: SupabaseClientOptions<'public'> = {
+// NOTE: We do not currently ship generated Database types in this repo.
+// Avoid constraining SupabaseClientOptions with a schema generic, otherwise
+// TypeScript may infer an overly-narrow Database type like `{ public: never }`,
+// which makes `.from('table')` calls resolve to `never`.
+const clientOptions: SupabaseClientOptions = {
   auth: {
     storage: new SecureStoreAdapter(),
     autoRefreshToken: true,
@@ -68,7 +72,7 @@ const clientOptions: SupabaseClientOptions<'public'> = {
   },
 };
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey, clientOptions);
+const supabase = createClient<any>(supabaseUrl, supabaseAnonKey, clientOptions);
 
 export { supabase };
 export default supabase;

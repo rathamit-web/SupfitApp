@@ -1,0 +1,4 @@
+// Placeholder image for training section. Replace with your own image as needed.
+// This is a 1x1 transparent PNG.
+
+export default 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=';

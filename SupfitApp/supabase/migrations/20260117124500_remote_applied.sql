@@ -1,0 +1,3 @@
+-- Remote-applied migration placeholder.
+-- This project ref already has migration version 20260117124500 applied.
+-- Intentionally empty to align local migration history with remote.
