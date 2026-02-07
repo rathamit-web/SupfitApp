@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, Dimensions, Platform, Alert } from 'react-native';
 import { useUserRole } from '../context/UserRoleContext';
 import { useSupabaseAuth } from '../hooks/useSupabaseAuth';
@@ -10,7 +10,8 @@ import { BlurView } from 'expo-blur';
 import { AntDesign, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { supabase } from '../../shared/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
+import * as SecureStore from 'expo-secure-store';
 
 // Fetch user profile from Supabase
 async function fetchUserProfileFromSupabase(userId) {
@@ -20,6 +21,116 @@ async function fetchUserProfileFromSupabase(userId) {
     .eq('id', userId)
     .single();
   return { profile: data, error };
+}
+
+type SupabaseRole = 'coach' | 'dietician' | 'individual';
+
+const normalizeSupabaseRole = (value?: string | null): SupabaseRole => {
+  const safe = (value || '').toLowerCase().trim();
+  if (safe === 'coach') return 'coach';
+  if (safe === 'dietician' || safe === 'dietitian') return 'dietician';
+  return 'individual';
+};
+
+const toContextRole = (role: SupabaseRole) => (role === 'individual' ? 'user' : role);
+
+// Update user role in public.users and auth metadata, returning the resolved role
+async function resolveAndPersistRole(
+  userId: string,
+  preferredRole?: string | null,
+  opts: { skipDbUpdate?: boolean } = {},
+) {
+  try {
+    const preferred = preferredRole ? normalizeSupabaseRole(preferredRole) : null;
+    const fromStorageRaw = await loadRoleFromStorage();
+    const fromStorage = fromStorageRaw ? normalizeSupabaseRole(fromStorageRaw) : null;
+
+    // Fetch existing role from DB to avoid downgrading
+    let dbRole: SupabaseRole | null = null;
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+      if (data?.role) dbRole = normalizeSupabaseRole(data.role);
+    } catch (dbErr) {
+      console.warn('[Auth] Could not fetch role from DB (continuing):', dbErr);
+    }
+
+    const resolved = preferred && preferred !== 'individual'
+      ? preferred
+      : dbRole
+        || preferred
+        || fromStorage
+        || 'individual';
+
+    // Persist locally first to keep UI in sync
+    await saveRoleToStorage(resolved);
+
+    // Upsert DB/auth metadata unless explicitly skipped
+    if (!opts.skipDbUpdate) {
+      const { data: authData } = await supabase.auth.getUser();
+      const email = authData?.user?.email ?? null;
+
+      const payload: any = {
+        id: userId,
+        role: resolved,
+        updated_at: new Date().toISOString(),
+      };
+      if (email) payload.email = email;
+
+      const { error: upsertError } = await supabase.from('users').upsert(payload);
+      if (upsertError) {
+        console.error('[Auth] Error upserting user role:', upsertError);
+        return { supabaseRole: resolved, contextRole: toContextRole(resolved) };
+      }
+
+      // Mirror role to auth metadata for quicker client reads
+      try {
+        await supabase.auth.updateUser({ data: { role: resolved } });
+      } catch (metaErr) {
+        console.warn('[Auth] Failed to update auth metadata role (non-blocking):', metaErr);
+      }
+
+      // Verify what the DB now stores; if mismatch, try a direct update and log
+      try {
+        const { data: verifyRow, error: verifyError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', userId)
+          .maybeSingle();
+
+        const normalizedDb = verifyRow?.role ? normalizeSupabaseRole(verifyRow.role) : null;
+
+        if (verifyError) {
+          console.warn('[Auth] Role verify failed (continuing):', verifyError);
+        } else if (!normalizedDb || normalizedDb !== resolved) {
+          console.warn('[Auth] Role mismatch after upsert, retrying update', {
+            expected: resolved,
+            actual: verifyRow?.role,
+          });
+
+          const { error: retryError } = await supabase
+            .from('users')
+            .update({ role: resolved })
+            .eq('id', userId);
+
+          if (retryError) {
+            console.error('[Auth] Retry role update failed:', retryError);
+          }
+        }
+      } catch (verifyErr) {
+        console.warn('[Auth] Role verification exception (continuing):', verifyErr);
+      }
+    }
+
+    console.log('[Auth] Resolved user role:', { userId, resolved, preferred, dbRole, fromStorage });
+    return { supabaseRole: resolved, contextRole: toContextRole(resolved) };
+  } catch (err) {
+    console.error('[Auth] Exception resolving/persisting role:', err);
+    return { supabaseRole: 'individual' as SupabaseRole, contextRole: 'user' as const };
+  }
 }
 
 // Log auth errors to analytics_events
@@ -38,18 +149,84 @@ async function logAuthError(eventType, email, errorMsg) {
 
 WebBrowser.maybeCompleteAuthSession();
 
+const ROLE_STORAGE_KEY = 'supfit_user_role';
+
+async function saveRoleToStorage(role: string) {
+  try {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.localStorage.setItem(ROLE_STORAGE_KEY, role);
+    } else {
+      await SecureStore.setItemAsync(ROLE_STORAGE_KEY, role);
+    }
+  } catch (err) {
+    console.warn('[Auth] Failed to persist role', err);
+  }
+}
+
+async function loadRoleFromStorage() {
+  try {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      return window.localStorage.getItem(ROLE_STORAGE_KEY);
+    }
+    return await SecureStore.getItemAsync(ROLE_STORAGE_KEY);
+  } catch (err) {
+    console.warn('[Auth] Failed to load persisted role', err);
+    return null;
+  }
+}
+
 type AuthProps = {
   route: RouteProp<Record<string, object | undefined>, string>;
   navigation: NativeStackNavigationProp<Record<string, object | undefined>>;
 };
 
 export default function Auth({ route, navigation }: AuthProps) {
-  const userType = route?.params?.userType || 'individual';
+  // Get role from route params, global storage, or default to individual
+  const globalRole = typeof window !== 'undefined' ? (window as any).__supfit_selected_role : undefined;
+  const initialUserType = route?.params?.userType || globalRole || 'individual';
+  console.log('[Auth] Initializing: route.userType =', route?.params?.userType, 'globalRole =', globalRole, 'initialUserType =', initialUserType);
+  const [selectedUserType, setSelectedUserType] = useState(initialUserType);
   const [isLogin, setIsLogin] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [showConfirmationMessage, setShowConfirmationMessage] = useState(false);
   const { role, setRole } = useUserRole();
   const { signInOrSignUp, resendConfirmationEmail, loading: authLoading, error: authError } = useSupabaseAuth();
+
+  useEffect(() => {
+    let isMounted = true;
+    const syncRole = async () => {
+      const fromRoute = route?.params?.userType as string | undefined;
+      const persisted = await loadRoleFromStorage();
+      const resolved = (fromRoute || persisted || 'individual') as string;
+      if (!isMounted) return;
+      setSelectedUserType(resolved);
+      if (!role) {
+        const contextRole = resolved === 'coach' ? 'coach' : resolved === 'dietician' ? 'dietician' : 'user';
+        setRole(contextRole);
+      }
+    };
+    syncRole();
+    return () => {
+      isMounted = false;
+    };
+  }, [route?.params?.userType, role, setRole]);
+
+  // Hydrate role from existing Supabase session on mount (e.g., app relaunch)
+  useEffect(() => {
+    let active = true;
+    const hydrateFromSession = async () => {
+      const { data: sessionData, error } = await supabase.auth.getSession();
+      if (error || !sessionData?.session?.user?.id) return;
+      const resolved = await resolveAndPersistRole(sessionData.session.user.id, selectedUserType, { skipDbUpdate: false });
+      if (!active) return;
+      setSelectedUserType(resolved.supabaseRole);
+      setRole(resolved.contextRole);
+    };
+    hydrateFromSession();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // prompt variable removed (was unused)
 
@@ -78,14 +255,15 @@ export default function Auth({ route, navigation }: AuthProps) {
           const refreshToken = url.searchParams.get('refresh_token');
           
           if (accessToken) {
-            const { error: sessionError } = await supabase.auth.setSession({
+            const { error: sessionError, data: sessionData } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken || '',
             });
             
-            if (!sessionError) {
-              setRole(userType === 'coach' ? 'coach' : 'user');
-              navigation.navigate('CreateProfileStep1', { userType: role || userType });
+            if (!sessionError && sessionData?.user?.id) {
+              const resolved = await resolveAndPersistRole(sessionData.user.id, selectedUserType);
+              setRole(resolved.contextRole);
+              navigation.navigate('CreateProfileStep1', { userType: resolved.supabaseRole });
             }
           }
         }
@@ -122,8 +300,9 @@ export default function Auth({ route, navigation }: AuthProps) {
         }
         
         if (data?.user) {
-          setRole(userType === 'coach' ? 'coach' : 'user');
-          navigation.navigate('CreateProfileStep1', { userType: role || userType });
+          const resolved = await resolveAndPersistRole(data.user.id, selectedUserType);
+          setRole(resolved.contextRole);
+          navigation.navigate('CreateProfileStep1', { userType: resolved.supabaseRole });
         }
       }
     } catch (err: any) {
@@ -143,8 +322,12 @@ export default function Auth({ route, navigation }: AuthProps) {
       console.error('Navigation prop is missing in Auth');
       return;
     }
-    // Set role in context if not already set (for deep links, etc)
-    if (!role) setRole(userType === 'coach' ? 'coach' : 'user');
+    const resolvedMapped = selectedUserType === 'coach'
+      ? 'coach'
+      : selectedUserType === 'dietician'
+        ? 'dietician'
+        : 'user';
+    setRole(resolvedMapped);
     if (!formData.email || !formData.password) {
       Alert.alert('Missing Information', 'Please enter email and password');
       await logAuthError('missing_info', formData.email, 'Missing email or password');
@@ -225,9 +408,22 @@ export default function Auth({ route, navigation }: AuthProps) {
       return;
     }
 
-    // After login, fetch user profile and enforce onboarding if incomplete
+    // After signup: Update user role in database
+    if (!isLogin && result.data?.user?.id) {
+      const resolved = await resolveAndPersistRole(result.data.user.id, selectedUserType);
+      setRole(resolved.contextRole);
+      navigation.navigate('CreateProfileStep1', { userType: resolved.supabaseRole });
+      return;
+    }
+
+    // After login, update user role and fetch user profile
     if (isLogin && result.data?.session?.user?.id) {
       const userId = result.data.session.user.id;
+      
+      // Update the user's role in database
+      const resolved = await resolveAndPersistRole(userId, selectedUserType);
+      setRole(resolved.contextRole);
+
       const { profile, error: profileError } = await fetchUserProfileFromSupabase(userId);
       if (profileError) {
         await logAuthError('profile_fetch', formData.email, profileError.message);
@@ -236,13 +432,13 @@ export default function Auth({ route, navigation }: AuthProps) {
       }
       // Check for required fields (adjust as needed)
       if (!profile?.full_name || !profile?.dob) {
-        navigation.navigate('CreateProfileStep1', { userType: role || userType });
+        navigation.navigate('CreateProfileStep1', { userType: resolved.supabaseRole });
       } else {
-        navigation.navigate((role || userType) === 'coach' ? 'CoachHome' : 'IndividualHome', { userType: role || userType });
+        const navRole = resolved.supabaseRole === 'coach' || resolved.supabaseRole === 'dietician'
+          ? 'CoachHome'
+          : 'IndividualHome';
+        navigation.navigate(navRole, { userType: resolved.supabaseRole });
       }
-    } else if (!isLogin) {
-      // Pass role to profile creation after signup
-      navigation.navigate('CreateProfileStep1', { userType: role || userType });
     }
   };
 

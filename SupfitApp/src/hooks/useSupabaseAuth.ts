@@ -25,14 +25,17 @@ export function useSupabaseAuth() {
           }
         }
       } else {
-        // Sign up
+        // Sign up - include selected role in metadata so trigger can read it
+        const userType = (window as any).__supfit_selected_role || 'individual';
+        console.log('[useSupabaseAuth] Signup: userType from global context =', userType);
         result = await supabase.auth.signUp({ 
           email, 
           password,
           options: {
-            // For development/testing, you can add emailRedirectTo if needed
             data: {
               created_at: new Date().toISOString(),
+              role: userType,
+              role_source: 'user_selection',
             }
           }
         });

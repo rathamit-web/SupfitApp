@@ -217,6 +217,8 @@ async function uploadImageToSupabase(uri: string, folder: string = 'profile-imag
   }
 }
 
+const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&q=80';
+
 const fallbackWorkouts = [
   {
     id: 1,
@@ -263,6 +265,8 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
       return fallback;
     }
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImageLoading, setProfileImageLoading] = useState(true);
+  const [profileImageError, setProfileImageError] = useState(false);
   // Fetch from DB only; do not show a hardcoded fallback name.
   const [coachName, setCoachName] = useState<string | null>(null);
   const [coachTitle, setCoachTitle] = useState<string | null>(null);
@@ -588,6 +592,38 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
       }
       const userId = authData.user.id;
 
+      // Fetch user profile (name, title/bio, and avatar)
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('full_name, bio, avatar_url')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (profileError) {
+          console.error('Failed to load user profile:', profileError);
+        } else if (profileData) {
+          if (isMounted) {
+            setCoachName(profileData.full_name && profileData.full_name.trim() ? profileData.full_name.trim() : null);
+            setCoachTitle(profileData.bio && profileData.bio.trim() ? profileData.bio.trim() : null);
+            
+            // Set profile image if avatar_url exists
+            if (profileData.avatar_url && typeof profileData.avatar_url === 'string') {
+              setProfileImage(profileData.avatar_url);
+              setProfileImageError(false);
+              setProfileImageLoading(true); // Start loading, will be reset onLoadEnd
+              console.log('[CoachHome] Avatar loaded:', profileData.avatar_url.substring(0, 50) + '...');
+            } else {
+              console.log('[CoachHome] No avatar_url found in profile');
+              setProfileImage(null);
+              setProfileImageLoading(false);
+            }
+          }
+        }
+      } catch (profileFetchError) {
+        console.error('Error fetching user profile:', profileFetchError);
+      }
+
       let fetchedCoach: CoachRecord | null = null;
       try {
         const { data: coachData } = await supabase
@@ -615,6 +651,7 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
       if (isMounted) {
         updateStatValue('Years Experience', yearsExperienceString);
         updateStatValue('Rating', ratingDisplay);
+        setIsProfileLoading(false);
       }
     };
     fetchCoachData();
@@ -867,6 +904,9 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
             return;
           }
           setProfileImage(cacheBustedUrl);
+          setProfileImageError(false);
+          setProfileImageLoading(true);
+          console.log('[CoachHome] Avatar updated:', cacheBustedUrl.substring(0, 50) + '...');
         } else {
           alert('Failed to upload image. Please try again. (See console for details)');
         }
@@ -919,6 +959,9 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
             return;
           }
           setProfileImage(cacheBustedUrl);
+          setProfileImageError(false);
+          setProfileImageLoading(true);
+          console.log('[CoachHome] Avatar updated:', cacheBustedUrl.substring(0, 50) + '...');
         } else {
           alert('Failed to upload image. Please try again.');
         }
@@ -1297,15 +1340,45 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
           style={styles.header}
         >
           <View style={styles.profileSection}>
-            {/* Profile Image */}
+            {/* Profile Image with Loading State */}
             <TouchableOpacity onPress={handleProfileImageChange} style={styles.avatarContainer}>
-              <Image
-                source={profileImage ? { uri: profileImage } : undefined}
-                style={styles.avatar}
-                resizeMode="cover"
-                fadeDuration={0}
-                accessibilityLabel="Coach profile picture"
-              />
+              {/* Skeleton Loader */}
+              {profileImageLoading && profileImage && !profileImageError && (
+                <View style={[styles.avatar, styles.skeletonAvatar]} />
+              )}
+              
+              {/* Actual Image */}
+              {profileImage && !profileImageError ? (
+                <Image
+                  source={{ uri: profileImage }}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                  fadeDuration={300}
+                  onLoadEnd={() => {
+                    setProfileImageLoading(false);
+                    console.log('[CoachHome] Profile image loaded successfully');
+                  }}
+                  onError={(error) => {
+                    console.error('[CoachHome] Failed to load profile image:', error);
+                    setProfileImageError(true);
+                    setProfileImageLoading(false);
+                  }}
+                  accessibilityLabel="Coach profile picture"
+                />
+              ) : (
+                /* Fallback Avatar (Default or Error) */
+                <Image
+                  source={{ uri: DEFAULT_AVATAR }}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                  fadeDuration={300}
+                  onLoadEnd={() => setProfileImageLoading(false)}
+                  accessible
+                  accessibilityLabel="Default coach avatar"
+                />
+              )}
+              
+              {/* Edit Overlay */}
               <View style={styles.editOverlay}>
                 <MaterialIcons name="edit" size={18} color="#ff3c20" />
               </View>
@@ -1315,9 +1388,15 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
             <View style={styles.profileInfo}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {/* Show the user-provided name beside the profile picture */}
-                <Text style={styles.profileName}>
-                  {isProfileLoading ? 'Loading…' : coachName || ''}
-                </Text>
+                {isProfileLoading ? (
+                  <View style={styles.skeletonLoader}>
+                    <View style={[styles.skeletonPlaceholder, { width: 150, height: 28 }]} />
+                  </View>
+                ) : (
+                  <Text style={styles.profileName}>
+                    {coachName || 'Unnamed Coach'}
+                  </Text>
+                )}
                 <TouchableOpacity
                   onPress={() => {
                     setEditName(coachName || '');
@@ -1329,7 +1408,13 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
                   <MaterialIcons name="edit" size={18} color="#ff3c20" />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.profileTitle}>{coachTitle || (isProfileLoading ? '' : '')}</Text>
+              {isProfileLoading ? (
+                <View style={[styles.skeletonLoader, { marginTop: 8 }]}>
+                  <View style={[styles.skeletonPlaceholder, { width: 200, height: 16 }]} />
+                </View>
+              ) : (
+                <Text style={styles.profileTitle}>{coachTitle || ''}</Text>
+              )}
               {!!profileLoadError && !isProfileLoading && (
                 <Text style={[styles.profileTitle, { color: '#d32f2f' }]}>{profileLoadError}</Text>
               )}
@@ -1822,6 +1907,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     borderWidth: 3,
     borderColor: '#fff',
+  },
+  skeletonAvatar: {
+    backgroundColor: '#e5e5ea',
+    position: 'absolute',
   },
   editOverlay: {
     position: 'absolute',
@@ -2383,6 +2472,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  skeletonLoader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  skeletonPlaceholder: {
+    backgroundColor: '#e5e5ea',
+    borderRadius: 8,
+    overflow: 'hidden',
   },
 });
 

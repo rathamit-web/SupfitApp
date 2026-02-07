@@ -1041,6 +1041,17 @@ function IndividualUserHome({ navigation, route }: any) {
   );
 
   const [subscriptions, setSubscriptions] = useState<SubscriptionCard[]>(defaultSubscriptions);
+  const [expandedSubscriptions, setExpandedSubscriptions] = useState<Set<SubscriptionKind>>(new Set());
+
+  const toggleSubscriptionExpanded = (id: SubscriptionKind) => {
+    const next = new Set(expandedSubscriptions);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setExpandedSubscriptions(next);
+  };
 
   const loadSubscriptionsFromStorage = useCallback(async () => {
     try {
@@ -1541,10 +1552,10 @@ function IndividualUserHome({ navigation, route }: any) {
                 <TouchableOpacity
                   onPress={handleConnectGoogleFit}
                   disabled={googleFitLoading}
-                  style={[styles.subscribeButton, { paddingVertical: 8, paddingHorizontal: 12 }]}
+                  style={[styles.subscriptionExpandButton, { paddingVertical: 8, paddingHorizontal: 12 }]}
                   accessibilityLabel="Connect Google Fit"
                 >
-                  <Text style={styles.subscribeButtonText}>
+                  <Text style={styles.subscriptionExpandButtonText}>
                     {googleFitLoading ? 'Connecting…' : 'Connect Google Fit'}
                   </Text>
                 </TouchableOpacity>
@@ -1552,10 +1563,10 @@ function IndividualUserHome({ navigation, route }: any) {
                 <TouchableOpacity
                   onPress={handlePullGoogleFitMetrics}
                   disabled={googleFitLoading}
-                  style={[styles.subscribeButton, { paddingVertical: 8, paddingHorizontal: 12 }]}
+                  style={[styles.subscriptionExpandButton, { paddingVertical: 8, paddingHorizontal: 12 }]}
                   accessibilityLabel="Refresh Google Fit metrics"
                 >
-                  <Text style={styles.subscribeButtonText}>
+                  <Text style={styles.subscriptionExpandButtonText}>
                     {googleFitLoading ? 'Syncing…' : 'Refresh from Google Fit'}
                   </Text>
                 </TouchableOpacity>
@@ -1606,45 +1617,124 @@ function IndividualUserHome({ navigation, route }: any) {
           </View>
         )}
 
-        {/* Subscriptions Section */}
+        {/* Discover Professionals - Search Section */}
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionTitle}>Discover Professionals</Text>
+          
+          <TouchableOpacity
+            style={styles.searchProfessionalButton}
+            onPress={() => {
+              navigation?.navigate?.('SearchCriteria');
+            }}
+            activeOpacity={0.9}
+          >
+            <MaterialIcons name="search" size={24} color="#FFF" />
+            
+            <View style={{ flex: 1 }}>
+              <Text style={styles.searchProfessionalTitle}>
+                Search by Goal
+              </Text>
+              <Text style={styles.searchProfessionalSubtitle}>
+                Find the perfect professional for you
+              </Text>
+            </View>
+            
+            <MaterialIcons name="chevron-right" size={24} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Subscriptions Section - Collapsible List */}
         <View style={styles.sectionWrap}>
           <Text style={styles.sectionTitle}>My Subscriptions</Text>
-          {subscriptions.map((sub) => (
-            <View key={sub.id} style={styles.subscriptionCard}>
-              <View style={styles.subscriptionHeader}>
-                <Text style={styles.subscriptionType}>{sub.typeLabel}</Text>
-                {sub.status === 'paid' ? (
-                  <View style={{ backgroundColor: 'rgba(52, 199, 89, 0.12)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 }}>
-                    <Text style={{ color: '#34c759', fontWeight: '700', fontSize: 12 }}>PAID</Text>
-                  </View>
-                ) : (
-                  <View style={{ backgroundColor: 'rgba(255, 60, 32, 0.12)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 }}>
-                    <Text style={{ color: '#ff3c20', fontWeight: '700', fontSize: 12 }}>UNPAID</Text>
-                  </View>
-                )}
-              </View>
+          <View style={styles.subscriptionListContainer}>
+            {subscriptions.map((sub, index) => {
+              const isExpanded = expandedSubscriptions.has(sub.id);
+              const hasActiveSubscription = sub.status === 'paid';
+              const isLast = index === subscriptions.length - 1;
+              return (
+                <View key={sub.id} style={[styles.subscriptionListItem, isLast && styles.subscriptionListItem_last]}>
+                  {/* Collapsed View - Clickable Row */}
+                  <TouchableOpacity
+                    onPress={() => toggleSubscriptionExpanded(sub.id)}
+                    style={styles.subscriptionListItemHeader}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.subscriptionListItemLeft}>
+                      <MaterialIcons
+                        name={isExpanded ? 'expand-less' : 'expand-more'}
+                        size={24}
+                        color="#ff3c20"
+                        style={styles.subscriptionExpandIcon}
+                      />
+                      <View style={styles.subscriptionListItemLabels}>
+                        <Text style={styles.subscriptionListItemName}>{sub.typeLabel}</Text>
+                        <Text style={styles.subscriptionListItemStatus}>
+                          {sub.status === 'paid' ? 'Active' : 'Find One'}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={{
+                      backgroundColor: sub.status === 'paid' ? 'rgba(52, 199, 89, 0.12)' : 'rgba(255, 60, 32, 0.12)',
+                      borderRadius: 6,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                    }}>
+                      <Text style={{
+                        color: sub.status === 'paid' ? '#34c759' : '#ff3c20',
+                        fontWeight: '700',
+                        fontSize: 11,
+                      }}>
+                        {sub.status === 'paid' ? 'Active' : 'Find One'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
 
-              <Text style={styles.subscriptionName}>{sub.name}</Text>
-              <Text style={styles.subscriptionAmount}>{sub.amount}</Text>
+                  {/* Expanded View - Details */}
+                  {isExpanded && (
+                    <View style={styles.subscriptionListItemExpanded}>
+                      <View style={styles.subscriptionDetailsContainer}>
+                        <View style={styles.subscriptionDetailRow}>
+                          <Text style={styles.subscriptionDetailLabel}>Provider:</Text>
+                          <Text style={styles.subscriptionDetailValue}>{sub.name}</Text>
+                        </View>
 
-              {sub.validUpto ? (
-                <Text style={{ fontSize: 12, color: '#6e6e73', marginBottom: 6 }}>
-                  Valid upto: {new Date(sub.validUpto).toLocaleDateString()}
-                </Text>
-              ) : null}
-              {sub.packageName ? (
-                <Text style={{ fontSize: 12, color: '#6e6e73', marginBottom: 10 }}>{sub.packageName}</Text>
-              ) : null}
+                        <View style={styles.subscriptionDetailRow}>
+                          <Text style={styles.subscriptionDetailLabel}>Amount:</Text>
+                          <Text style={styles.subscriptionDetailValue}>{sub.amount}</Text>
+                        </View>
 
-              <TouchableOpacity
-                style={styles.subscribeButton}
-                onPress={() => navigation?.navigate?.(sub.navigateTo)}
-                accessibilityLabel={`${sub.status === 'paid' ? 'Manage' : 'Subscribe'} ${sub.typeLabel}`}
-              >
-                <Text style={styles.subscribeButtonText}>{sub.status === 'paid' ? 'Manage' : 'Subscribe'}</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+                        {sub.validUpto && (
+                          <View style={styles.subscriptionDetailRow}>
+                            <Text style={styles.subscriptionDetailLabel}>Valid Until:</Text>
+                            <Text style={styles.subscriptionDetailValue}>
+                              {new Date(sub.validUpto).toLocaleDateString()}
+                            </Text>
+                          </View>
+                        )}
+
+                        {sub.packageName && (
+                          <View style={styles.subscriptionDetailRow}>
+                            <Text style={styles.subscriptionDetailLabel}>Package:</Text>
+                            <Text style={styles.subscriptionDetailValue}>{sub.packageName}</Text>
+                          </View>
+                        )}
+                      </View>
+
+                      <TouchableOpacity
+                        style={[styles.subscriptionExpandButton, hasActiveSubscription && styles.subscriptionExpandButtonModify]}
+                        onPress={() => navigation?.navigate?.(sub.navigateTo, { openSearchModal: !hasActiveSubscription })}
+                        accessibilityLabel={`${hasActiveSubscription ? 'Modify' : 'Search'} ${sub.typeLabel}`}
+                      >
+                        <Text style={styles.subscriptionExpandButtonText}>
+                          {hasActiveSubscription ? 'Modify' : 'Search'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
         </View>
 
         {/* Diet Recommendation Section */}
@@ -1881,6 +1971,38 @@ const styles = StyleSheet.create({
   sectionWrap: { marginTop: 32, paddingHorizontal: 20 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, justifyContent: 'space-between' },
   sectionTitle: { fontWeight: '700', fontSize: 18, color: '#1d1d1f' },
+  searchProfessionalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF6B35',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    gap: 12,
+    marginBottom: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  searchProfessionalTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFF',
+    marginBottom: 2,
+  },
+  searchProfessionalSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.85)',
+    lineHeight: 18,
+  },
   addWorkoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1984,29 +2106,95 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   
-  // Subscription styles
-  subscriptionCard: { 
-    backgroundColor: '#fff', 
-    borderRadius: 16, 
-    padding: 20, 
-    marginBottom: 16 
+  // Subscription Collapsible List styles
+  subscriptionListContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e5ea',
+    overflow: 'hidden',
   },
-  subscriptionHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
+  subscriptionListItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5ea',
+  },
+  subscriptionListItem_last: {
+    borderBottomWidth: 0,
+  },
+  subscriptionListItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8 
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
-  subscriptionType: { fontSize: 13, color: '#6e6e73', fontWeight: '500' },
-  subscriptionName: { fontSize: 18, fontWeight: '700', color: '#1d1d1f', marginBottom: 8 },
-  subscriptionAmount: { fontSize: 24, fontWeight: '700', color: '#1d1d1f', marginBottom: 12 },
-  subscribeButton: { 
-    backgroundColor: '#ff3c20', 
-    borderRadius: 10, 
-    padding: 12, 
-    alignItems: 'center' 
+  subscriptionListItemLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  subscribeButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  subscriptionExpandIcon: {
+    width: 24,
+    height: 24,
+  },
+  subscriptionListItemLabels: {
+    flex: 1,
+  },
+  subscriptionListItemName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1d1d1f',
+    marginBottom: 2,
+  },
+  subscriptionListItemStatus: {
+    fontSize: 12,
+    color: '#6e6e73',
+    fontWeight: '500',
+  },
+  subscriptionListItemExpanded: {
+    backgroundColor: '#f9f9f9',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e5ea',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  subscriptionDetailsContainer: {
+    marginBottom: 16,
+  },
+  subscriptionDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  subscriptionDetailLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6e6e73',
+    flex: 1,
+  },
+  subscriptionDetailValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1d1d1f',
+    textAlign: 'right',
+    flex: 1,
+  },
+  subscriptionExpandButton: {
+    backgroundColor: '#ff3c20',
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+  },
+  subscriptionExpandButtonModify: {
+    backgroundColor: '#34c759',
+  },
+  subscriptionExpandButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   
   // Diet styles
   dietGrid: { gap: 12 },

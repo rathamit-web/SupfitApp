@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Platform } from 'react-native';
-import supabaseClient from '../../shared/supabaseClient';
+import supabaseClient from '../lib/supabaseClient';
 import { getLocalActiveDateString } from '../health/activeHours';
 import { readTodayDailyMetrics, type DailyMetricsReadResult } from '../health/dailyMetrics';
 

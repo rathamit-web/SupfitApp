@@ -18,7 +18,7 @@ interface IconProps {
   readonly active?: boolean;
 }
 // Inline Home SVG as a React Native SVG component (from HomeIcon.svg)
-const HomeIcon = React.memo(({ color = '#6e6e73', size = 26, active = false }: IconProps) => (
+const HomeIcon = React.memo(({ color = '#6e6e73', size = 24, active = false }: IconProps) => (
   <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
     <Svg width={size} height={size} viewBox="0 0 24 24">
       <Path 
@@ -31,7 +31,7 @@ const HomeIcon = React.memo(({ color = '#6e6e73', size = 26, active = false }: I
 HomeIcon.displayName = 'HomeIcon';
 
 // Inline UserSetting SVG as a React Native SVG component (from UserSetting.svg)
-const UserSettingIcon = React.memo(({ color = '#6e6e73', size = 22, active = false }: IconProps) => (
+const UserSettingIcon = React.memo(({ color = '#6e6e73', size = 24, active = false }: IconProps) => (
   <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
     <Svg width={size} height={size} viewBox="0 0 22 22">
       <Path 
@@ -44,7 +44,7 @@ const UserSettingIcon = React.memo(({ color = '#6e6e73', size = 22, active = fal
 UserSettingIcon.displayName = 'UserSettingIcon';
 
 // Inline ClientDetail SVG as a React Native SVG component (Regular-M variant from ClientDetails.svg)
-const ClientDetailIcon = React.memo(({ color = '#6e6e73', size = 26, active = false }: IconProps) => (
+const ClientDetailIcon = React.memo(({ color = '#6e6e73', size = 24, active = false }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 -50 120 120" fill="none">
     <Path 
       d="M23.125 14.77 Q21 14.77 19.438 13.208 Q17.875 11.645 17.875 9.52 V-3.605 Q17.875 -14.855 24.875 -23.48 Q31.875 -32.105 42.875 -34.48 Q37.875 -30.98 35.125 -25.667 Q32.375 -20.355 32.375 -14.23 V9.52 Q32.375 10.895 32.75 12.27 Q33.125 13.645 34 14.77 H23.125 Z M41.5 14.77 Q39.375 14.77 37.812 13.208 Q36.25 11.645 36.25 9.52 V-14.23 Q36.25 -22.98 42.438 -29.105 Q48.625 -35.23 57.375 -35.23 H81 Q89.75 -35.23 95.875 -29.105 Q102 -22.98 102 -14.23 V-6.23 Q102 2.52 95.875 8.645 Q89.75 14.77 81 14.77 H41.5 Z M60 -45.73 Q51.75 -45.73 46 -51.48 Q40.25 -57.23 40.25 -65.48 Q40.25 -73.73 46 -79.48 Q51.75 -85.23 60 -85.23 Q68.25 -85.23 74 -79.48 Q79.75 -73.73 79.75 -65.48 Q79.75 -57.23 74 -51.48 Q68.25 -45.73 60 -45.73 Z" 
@@ -55,8 +55,8 @@ const ClientDetailIcon = React.memo(({ color = '#6e6e73', size = 26, active = fa
 ClientDetailIcon.displayName = 'ClientDetailIcon';
 
 // Inline RevenueTracker SVG as a React Native SVG component
-const RevenueTrackerIcon = React.memo(({ color = '#ff3c20', size = 26, active = false }: IconProps) => (
-  <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
+const RevenueTrackerIcon = React.memo(({ color = '#ff3c20', size = 24, active = false }: IconProps) => (
+  <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
     <Svg width={size} height={size} viewBox="0 -100 160 160" fill="none">
       <Path d="M29.025 22.82 Q25.155 22.82 22.253 19.918 Q19.35 17.015 19.35 13.145 V-83.605 Q19.35 -87.475 22.253 -90.377 Q25.155 -93.28 29.025 -93.28 H125.775 Q129.645 -93.28 132.548 -90.377 Q135.45 -87.475 135.45 -83.605 V13.145 Q135.45 17.015 132.548 19.918 Q129.645 22.82 125.775 22.82 H29.025 Z M29.025 -4.592 V13.145 Q29.025 13.145 29.025 13.145 Q29.025 13.145 29.025 13.145 H125.775 Q125.775 13.145 125.775 13.145 Q125.775 13.145 125.775 13.145 V-44.26 L85.463 -3.947 L56.921 -32.489 L29.025 -4.592 Z M29.025 -18.299  56.921 -46.195  85.463 -17.654  125.775 -57.966 V-83.605 Q125.775 -83.605 125.775 -83.605 Q125.775 -83.605 125.775 -83.605 H29.025 Q29.025 -83.605 29.025 -83.605 Q29.025 -83.605 29.025 -83.605 V-18.299 Z" fill={active ? '#ff3c20' : color} />
     </Svg>
@@ -64,13 +64,13 @@ const RevenueTrackerIcon = React.memo(({ color = '#ff3c20', size = 26, active = 
 ));
 RevenueTrackerIcon.displayName = 'RevenueTrackerIcon';
 
-// Inline CardMembership SVG as a React Native SVG component
-const CardMembershipIcon = React.memo(({ color = '#6e6e73', size = 26, active = false }: IconProps) => (
+// Inline CardMembership SVG as a React Native SVG component (from card template Regular-M)
+const CardMembershipIcon = React.memo(({ color = '#6e6e73', size = 24, active = false }: IconProps) => (
   <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Svg width={size} height={size} viewBox="10 -85 100 100" fill="none">
       <Path 
-        d="M20 8H4C2.9 8 2.01 8.9 2.01 10L2 20C2 21.1 2.9 22 4 22H20C21.1 22 22 21.1 22 20V10C22 8.9 21.1 8 20 8ZM20 20H4V10H20V20ZM6 13H12V19H6Z" 
-        fill={active ? '#ff3c20' : color} 
+        d="M20 -30.23 V-20.23 Q20 -20.23 20 -20.23 Q20 -20.23 20 -20.23 H100 Q100 -20.23 100 -20.23 Q100 -20.23 100 -20.23 V-30.23 H20 Z M20 -85.23 H100 Q104.125 -85.23 107.062 -82.292 Q110 -79.355 110 -75.23 V-20.23 Q110 -16.105 107.062 -13.167 Q104.125 -10.23 100 -10.23 H80 V14.77 L60 4.77 L40 14.77 V-10.23 H20 Q15.875 -10.23 12.938 -13.167 Q10 -16.105 10 -20.23 V-75.23 Q10 -79.355 12.938 -82.292 Q15.875 -85.23 20 -85.23 Z M20 -45.23 H100 V-75.23 Q100 -75.23 100 -75.23 Q100 -75.23 100 -75.23 H20 Q20 -75.23 20 -75.23 Q20 -75.23 20 -75.23 V-45.23 Z" 
+        fill={active ? '#ff3c20' : color}
       />
     </Svg>
   </View>
@@ -121,7 +121,7 @@ export default function FooterNav({ mode = 'user', navigation: navProp, currentR
       >
         <HomeIcon
           color={isActive('IndividualHome') ? '#ff3c20' : '#6e6e73'}
-          size={22}
+          size={24}
           active={isActive('IndividualHome')}
         />
       </Pressable>
@@ -142,11 +142,12 @@ export default function FooterNav({ mode = 'user', navigation: navProp, currentR
         <Image
           source={require('../../assets/icons/HealthDashboard.png')}
           style={{
-            width: 22,
-            height: 22,
+            width: 24,
+            height: 24,
             tintColor: isActive('HealthDashboard') ? '#ff3c20' : '#6e6e73',
           }}
           resizeMode="contain"
+          accessibilityLabel="Health Dashboard icon"
         />
       </Pressable>
       <Pressable
@@ -157,7 +158,7 @@ export default function FooterNav({ mode = 'user', navigation: navProp, currentR
       >
         <UserSettingIcon
           color={isActive('UserSettingsNative') ? '#ff3c20' : '#6e6e73'}
-          size={22}
+          size={24}
           active={isActive('UserSettingsNative')}
         />
       </Pressable>
@@ -174,7 +175,7 @@ export default function FooterNav({ mode = 'user', navigation: navProp, currentR
       >
         <HomeIcon
           color={isActive('CoachHome') ? '#ff3c20' : '#6e6e73'}
-          size={22}
+          size={24}
           active={isActive('CoachHome')}
         />
       </Pressable>
@@ -187,11 +188,12 @@ export default function FooterNav({ mode = 'user', navigation: navProp, currentR
         <Image
           source={require('../../assets/icons/RevenueTracker.png')}
           style={{
-            width: 22,
-            height: 22,
+            width: 24,
+            height: 24,
             tintColor: isActive('RevenueTracker') ? '#ff3c20' : '#6e6e73',
           }}
           resizeMode="contain"
+          accessibilityLabel="Revenue Tracker icon"
         />
       </Pressable>
       <Pressable
@@ -203,11 +205,12 @@ export default function FooterNav({ mode = 'user', navigation: navProp, currentR
         <Image
           source={require('../../assets/icons/Clientdetail.png')}
           style={{
-            width: 22,
-            height: 22,
+            width: 24,
+            height: 24,
             tintColor: isActive('ClientDetail') ? '#ff3c20' : '#6e6e73',
           }}
           resizeMode="contain"
+          accessibilityLabel="Client Details icon"
         />
       </Pressable>
       <Pressable
@@ -219,11 +222,12 @@ export default function FooterNav({ mode = 'user', navigation: navProp, currentR
         <Image
           source={require('../../assets/icons/Testimonials.png')}
           style={{
-            width: 22,
-            height: 22,
+            width: 24,
+            height: 24,
             tintColor: isActive('Testimonials') ? '#ff3c20' : '#6e6e73',
           }}
           resizeMode="contain"
+          accessibilityLabel="Testimonials icon"
         />
       </Pressable>
       <Pressable
@@ -234,7 +238,7 @@ export default function FooterNav({ mode = 'user', navigation: navProp, currentR
       >
         <CardMembershipIcon
           color={isActive('CoachSubscription') ? '#ff3c20' : '#6e6e73'}
-          size={22}
+          size={24}
           active={isActive('CoachSubscription')}
         />
       </Pressable>

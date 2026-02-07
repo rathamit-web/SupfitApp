@@ -43,3 +43,6 @@ const clientOptions: SupabaseClientOptions<'public'> = {
 };
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, clientOptions);
+
+// Default export for modules that expect a default client
+export default supabase;

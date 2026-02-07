@@ -4,6 +4,7 @@ import { useUserRole } from '../context/UserRoleContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { Asset } from 'expo-asset';
+import * as SecureStore from 'expo-secure-store';
 
 // Preload logo
 const logoImage = require('../../assets/images/Supfitlogo.png');
@@ -12,6 +13,20 @@ const UserIcon = React.memo(() => <Feather name="user" size={23} color="#fff" />
 UserIcon.displayName = 'UserIcon';
 const UsersIcon = React.memo(() => <Feather name="users" size={23} color="#fff" />);
 UsersIcon.displayName = 'UsersIcon';
+
+const ROLE_STORAGE_KEY = 'supfit_user_role';
+
+async function persistRoleSelection(role: 'individual' | 'coach') {
+  try {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.localStorage.setItem(ROLE_STORAGE_KEY, role);
+    } else {
+      await SecureStore.setItemAsync(ROLE_STORAGE_KEY, role);
+    }
+  } catch (err) {
+    console.warn('[Landing] Failed to persist role selection', err);
+  }
+}
 
 function RoleCard({ iconComponent, title, subtitle, onPress }: any) {
   const [pressed, setPressed] = useState(false);
@@ -66,13 +81,23 @@ export default function Landing({ navigation }: any) {
     preloadAssets();
   }, []);
 
-  // Restore: go to Auth page, let Auth handle bypass
+  // Store role selection globally so auth hook can inject it into signup metadata
   const handleRoleSelect = async (role: 'individual' | 'coach') => {
     setLoading(true);
     try {
+      console.log('[Landing] Role selected by user:', role);
       setRole(role === 'individual' ? 'user' : 'coach');
+      await persistRoleSelection(role);
+      
+      // Store in window for auth hook to access
+      if (typeof window !== 'undefined') {
+        (window as any).__supfit_selected_role = role;
+        console.log('[Landing] Stored role in global context:', role);
+      }
+      
       if (navigation && typeof navigation.navigate === 'function') {
         navigation.navigate('Auth', { userType: role });
+        console.log('[Landing] Navigated to Auth with userType:', role);
       } else {
         console.error('Navigation prop is missing in Landing');
       }

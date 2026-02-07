@@ -21,6 +21,9 @@ import DietPlanNative from '../screens/DietPlanNative';
 import ScheduleSessionNative from '../screens/ScheduleSessionNative';
 import TestimonialsNative from '../screens/TestimonialsNative';
 import CoachSubscriptionNative from '../screens/CoachSubscriptionNative';
+import SearchCriteriaNative from '../screens/SearchCriteriaNative';
+import SearchResultsNative from '../screens/SearchResultsNative';
+import ProfessionalDetailNative from '../screens/ProfessionalDetailNative';
 
 // Navigation param list for type safety
 export type RootStackParamList = {
@@ -46,6 +49,21 @@ export type RootStackParamList = {
   ScheduleSession: { clientId?: number } | undefined;
   Testimonials: undefined;
   CoachSubscription: undefined;
+  SearchCriteria: undefined;
+  SearchResults: {
+    selectedGoals: string[];
+    filters: {
+      timing?: string[];
+      mode?: string[];
+      minRating?: number;
+      maxPrice?: number;
+    };
+  } | undefined;
+  ProfessionalDetail: {
+    professionalId: string;
+    professional?: any;
+    matchScore?: number;
+  } | undefined;
 };
 
 const Stack = createStackNavigator();
@@ -163,6 +181,21 @@ export default function AppNavigator() {
         name="CoachSubscription"
         component={CoachSubscriptionNative}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="SearchCriteria"
+        component={SearchCriteriaNative}
+        options={{ headerShown: false, cardStyle: { backgroundColor: '#FFF' } }}
+      />
+      <Stack.Screen
+        name="SearchResults"
+        component={SearchResultsNative}
+        options={{ headerShown: false, cardStyle: { backgroundColor: '#F5F5F5' } }}
+      />
+      <Stack.Screen
+        name="ProfessionalDetail"
+        component={ProfessionalDetailNative}
+        options={{ headerShown: false, cardStyle: { backgroundColor: '#FFF' } }}
       />
     </Stack.Navigator>
   );

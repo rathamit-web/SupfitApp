@@ -4,7 +4,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useUserRole } from '../context/UserRoleContext';
-import { supabase } from '../../shared/supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 
 type CustomCheckboxProps = {
   value: boolean;

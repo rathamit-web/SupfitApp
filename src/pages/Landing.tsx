@@ -307,6 +307,7 @@ export default function Landing() {
           © 2024 SupFit. Your journey to better health starts here.
         </p>
       </div>
-    </div>
+      </div>
+    </Suspense>
   );
 }

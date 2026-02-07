@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { saveSubscription } from '../lib/subscriptionStorage';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal } from 'react-native';
+import { saveSubscription, SUBSCRIPTION_KEYS } from '../lib/subscriptionStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -89,12 +90,31 @@ const dieticians: Dietician[] = [
   },
 ];
 
-const SelectDieticianNative = () => {
+const SelectDieticianNative = ({ route }: any) => {
   const navigation = useNavigation();
   const [selectedDietician, setSelectedDietician] = useState<number | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(true);
+
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      try {
+        const subscription = await AsyncStorage.getItem(SUBSCRIPTION_KEYS.dietician);
+        setHasActiveSubscription(!!subscription);
+        // Open search modal if navigated from home page with openSearchModal flag
+        if (route?.params?.openSearchModal) {
+          setShowSearchModal(true);
+        }
+      } catch {
+        setHasActiveSubscription(false);
+      }
+    };
+    checkSubscriptionStatus();
+  }, [route?.params?.openSearchModal]);
 
   const handleSelectDietician = (dieticianId: number) => {
     setSelectedDietician(dieticianId);
@@ -109,6 +129,14 @@ const SelectDieticianNative = () => {
     if (!selectedDietician || !selectedPackage) return;
     setShowPaymentModal(true);
   };
+
+  const filteredDieticians = dieticians.filter(dietician =>
+    searchQuery === '' ? true : 
+    dietician.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    dietician.specialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    dietician.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    dietician.mode.some(m => m.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   const handlePaymentConfirm = async () => {
     if (!selectedDietician || !selectedPackage) return;
@@ -133,8 +161,13 @@ const SelectDieticianNative = () => {
   return (
     <LinearGradient colors={["#f8f9fa", "#f5f5f7"]} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Select Your Dietician</Text>
-        {dieticians.map((dietician) => (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <Text style={styles.title}>Select Your Dietician</Text>
+          <TouchableOpacity onPress={() => setShowSearchModal(true)} style={styles.searchButton}>
+            <MaterialIcons name="search" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+        {filteredDieticians.map((dietician) => (
           <View key={dietician.id} style={[styles.card, selectedDietician === dietician.id && styles.cardSelected]}>
             <TouchableOpacity onPress={() => handleSelectDietician(dietician.id)} activeOpacity={0.85} style={{ flexDirection: 'row' }}>
               <Image source={{ uri: dietician.image }} style={styles.dieticianImage} />
@@ -189,6 +222,64 @@ const SelectDieticianNative = () => {
           </View>
         ))}
       </ScrollView>
+      
+      {/* Search Modal */}
+      <Modal visible={showSearchModal} transparent animationType="slide" onRequestClose={() => setShowSearchModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.searchModalContent}>
+            <View style={styles.searchModalHeader}>
+              <Text style={styles.searchModalTitle}>Search Dieticians</Text>
+              <TouchableOpacity onPress={() => setShowSearchModal(false)}>
+                <MaterialIcons name="close" size={24} color="#1d1d1f" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.searchInputContainer}>
+              <MaterialIcons name="search" size={20} color="#6e6e73" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by name, specialty, or location..."
+                placeholderTextColor="#c7c7cc"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              {searchQuery !== '' && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <MaterialIcons name="clear" size={20} color="#6e6e73" />
+                </TouchableOpacity>
+              )}
+            </View>
+            <ScrollView style={styles.searchResults}>
+              {filteredDieticians.length > 0 ? (
+                filteredDieticians.map((dietician) => (
+                  <TouchableOpacity
+                    key={dietician.id}
+                    style={styles.searchResultItem}
+                    onPress={() => {
+                      handleSelectDietician(dietician.id);
+                      setShowSearchModal(false);
+                      setSearchQuery('');
+                    }}
+                  >
+                    <Image source={{ uri: dietician.image }} style={styles.searchResultImage} />
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.searchResultName}>{dietician.name}</Text>
+                      <Text style={styles.searchResultMeta}>{dietician.specialty} • {dietician.location}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                        <MaterialIcons name="star" size={14} color="#ffb300" />
+                        <Text style={styles.searchResultRating}>{dietician.rating} ({dietician.reviews})</Text>
+                      </View>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={24} color="#c7c7cc" />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.noResultsText}>No dieticians found matching "{searchQuery}"</Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+      
       <Modal visible={showPaymentModal} transparent animationType="slide" onRequestClose={() => setShowPaymentModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -239,6 +330,19 @@ const styles = StyleSheet.create({
   confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   cancelBtn: { backgroundColor: '#eee', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 32, alignItems: 'center' },
   cancelBtnText: { color: '#1d1d1f', fontWeight: '600', fontSize: 15 },
+  searchButton: { backgroundColor: '#ff3c20', borderRadius: 10, padding: 10, alignItems: 'center', justifyContent: 'center' },
+  searchModalContent: { backgroundColor: '#fff', borderRadius: 20, flex: 0.9, marginHorizontal: 16, marginVertical: 40, flexDirection: 'column', padding: 0, overflow: 'hidden' },
+  searchModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  searchModalTitle: { fontSize: 20, fontWeight: '700', color: '#1d1d1f' },
+  searchInputContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#f5f5f7', marginHorizontal: 16, marginVertical: 12, borderRadius: 10 },
+  searchInput: { flex: 1, fontSize: 15, color: '#1d1d1f', marginHorizontal: 8, paddingVertical: 8 },
+  searchResults: { flex: 1, paddingHorizontal: 16 },
+  searchResultItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f7' },
+  searchResultImage: { width: 60, height: 60, borderRadius: 10, backgroundColor: '#eee' },
+  searchResultName: { fontSize: 16, fontWeight: '700', color: '#1d1d1f' },
+  searchResultMeta: { fontSize: 13, color: '#6e6e73', marginTop: 2 },
+  searchResultRating: { fontSize: 12, color: '#6e6e73', marginLeft: 4 },
+  noResultsText: { textAlign: 'center', fontSize: 15, color: '#6e6e73', marginTop: 32 },
 });
 
 export default SelectDieticianNative;

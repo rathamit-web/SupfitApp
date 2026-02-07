@@ -1,5 +1,6 @@
 // Mock user service for role and profile
-export type UserRole = 'user' | 'coach' | 'admin';
+// Keep roles aligned with Supabase auth/user metadata
+export type UserRole = 'user' | 'coach' | 'dietician' | 'admin';
 
 export interface UserProfile {
   id: string;
