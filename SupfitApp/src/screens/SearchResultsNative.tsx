@@ -248,7 +248,7 @@ export default function SearchResultsNative({
         user_id: userId,
         query_filters: { goals: selectedGoals, ...filters },
         selected_professional_id: professional.professional_id,
-      }).catch(err => console.error('Error logging interaction:', err));
+      }).then(() => console.log('Interaction logged'));
     }
 
     // Navigate to professional detail

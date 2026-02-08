@@ -723,5 +723,3 @@ const styles = StyleSheet.create({
     fontFamily: 'Courier New',
   },
 });
-
-export default MatchWeightTuningPage;

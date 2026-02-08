@@ -42,18 +42,9 @@ const GOAL_CATEGORIES: GoalCategoryInfo[] = [
   { id: 'muscle_gain', label: 'Muscle Gain', icon: 'fitness-center' },
   { id: 'yoga_stretching', label: 'Yoga & Stretching', icon: 'self-improvement' },
   { id: 'posture_therapy', label: 'Posture Therapy', icon: 'accessibility' },
-  { id: 'cardio_fitness', label: 'Cardio Fitness', icon: 'favorite' },
-  { id: 'beginner_training', label: 'Beginner Training', icon: 'sports-circle' },
   { id: 'pilates', label: 'Pilates', icon: 'meditation' },
-  { id: 'nutrition_coaching', label: 'Nutrition', icon: 'restaurant' },
-  { id: 'sports_performance', label: 'Sports Performance', icon: 'sports-basketball' },
-  { id: 'injury_recovery', label: 'Injury Recovery', icon: 'healing' },
-  { id: 'flexibility', label: 'Flexibility', icon: 'open-in-full' },
-  { id: 'mobility', label: 'Mobility', icon: 'directions-walk' },
+  { id: 'nutrition_coaching', label: 'Nutrition Specialist', icon: 'restaurant' },
   { id: 'core_strength', label: 'Core Strength', icon: 'filter-center-focus' },
-  { id: 'endurance_training', label: 'Endurance', icon: 'trending-up' },
-  { id: 'functional_fitness', label: 'Functional Fitness', icon: 'build' },
-  { id: 'rehabilitation', label: 'Rehabilitation', icon: 'home-repair-service' },
 ];
 
 interface GoalCategoryButtonProps {

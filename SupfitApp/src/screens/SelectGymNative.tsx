@@ -6,6 +6,31 @@ import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, Tex
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
+type GoalCategory = 
+  | 'weight_loss'
+  | 'muscle_gain'
+  | 'yoga_stretching'
+  | 'posture_therapy'
+  | 'pilates'
+  | 'nutrition_coaching'
+  | 'core_strength';
+
+interface GoalCategoryInfo {
+  id: GoalCategory;
+  label: string;
+  icon: string;
+}
+
+const GOAL_CATEGORIES: GoalCategoryInfo[] = [
+  { id: 'weight_loss', label: 'Weight Loss', icon: 'monitor-weight' },
+  { id: 'muscle_gain', label: 'Muscle Gain', icon: 'fitness-center' },
+  { id: 'yoga_stretching', label: 'Yoga & Stretching', icon: 'self-improvement' },
+  { id: 'posture_therapy', label: 'Posture Therapy', icon: 'accessibility' },
+  { id: 'pilates', label: 'Pilates', icon: 'meditation' },
+  { id: 'nutrition_coaching', label: 'Nutrition Specialist', icon: 'restaurant' },
+  { id: 'core_strength', label: 'Core Strength', icon: 'filter-center-focus' },
+];
+
 interface GymPackage {
   id: number;
   name: string;
@@ -25,6 +50,7 @@ interface Gym {
   address: string;
   amenities: string[];
   packages: GymPackage[];
+  matchScore?: number;
 }
 
 const gyms: Gym[] = [
@@ -151,22 +177,19 @@ const SelectGymNative = ({ route }: any) => {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [hasActiveSubscription, setHasActiveSubscription] = useState(true);
+  const [selectedGoals, setSelectedGoals] = useState<GoalCategory[]>([]);
 
   useEffect(() => {
     const checkSubscriptionStatus = async () => {
       try {
         const subscription = await AsyncStorage.getItem(SUBSCRIPTION_KEYS.gym);
         setHasActiveSubscription(!!subscription);
-        // Open search modal if navigated from home page with openSearchModal flag
-        if (route?.params?.openSearchModal) {
-          setShowSearchModal(true);
-        }
       } catch {
         setHasActiveSubscription(false);
       }
     };
     checkSubscriptionStatus();
-  }, [route?.params?.openSearchModal]);
+  }, []);
 
   const handleSelectGym = (gymId: number) => {
     setSelectedGym(gymId);
@@ -182,7 +205,27 @@ const SelectGymNative = ({ route }: any) => {
     setShowPaymentModal(true);
   };
 
-  const filteredGyms = gyms.filter(gym =>
+  const calculateMatchScore = (gym: Gym): number => {
+    let score = (gym.rating / 5) * 50;
+    
+    if (gym.reviews >= 50) score += 10;
+    else if (gym.reviews >= 20) score += 7;
+    else if (gym.reviews >= 5) score += 4;
+    
+    // Bonus for amenities (each amenity increases match)
+    if (gym.amenities.length > 5) score += 15;
+    
+    if (selectedGoals.length > 0) score += 10;
+    
+    return Math.round(Math.min(score, 100));
+  };
+
+  const gymsWithScores = gyms.map(gym => ({
+    ...gym,
+    matchScore: calculateMatchScore(gym),
+  })).sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+
+  const filteredGyms = gymsWithScores.filter(gym =>
     searchQuery === '' ? true : 
     gym.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     gym.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -218,8 +261,59 @@ const SelectGymNative = ({ route }: any) => {
             <MaterialIcons name="search" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
+
+        {/* Goal Criteria Section */}
+        <View style={styles.goalsSection}>
+          <Text style={styles.goalsSectionTitle}>Select Your Goals</Text>
+          <View style={styles.goalsGrid}>
+            {GOAL_CATEGORIES.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={[
+                  styles.goalButton,
+                  selectedGoals.includes(category.id) && styles.goalButtonSelected,
+                ]}
+                onPress={() => {
+                  setSelectedGoals((prev) =>
+                    prev.includes(category.id)
+                      ? prev.filter((g) => g !== category.id)
+                      : [...prev, category.id]
+                  );
+                }}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons
+                  name={category.icon as any}
+                  size={24}
+                  color={selectedGoals.includes(category.id) ? '#ff3c20' : '#999'}
+                />
+                <Text
+                  style={[
+                    styles.goalButtonText,
+                    selectedGoals.includes(category.id) && styles.goalButtonTextSelected,
+                  ]}
+                  numberOfLines={2}
+                >
+                  {category.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {filteredGyms.map((gym) => (
           <View key={gym.id} style={[styles.card, selectedGym === gym.id && styles.cardSelected]}>
+            {/* Match Score Badge */}
+            {gym.matchScore !== undefined && (
+              <View style={[
+                styles.matchScoreBadge,
+                gym.matchScore! >= 85 && styles.matchScoreBadgeExcellent,
+                gym.matchScore! >= 60 && gym.matchScore! < 85 && styles.matchScoreBadgeGood,
+                gym.matchScore! < 60 && styles.matchScoreBadgeFair,
+              ]}>
+                <Text style={styles.matchScoreText}>🎯 {gym.matchScore}%</Text>
+              </View>
+            )}
             <TouchableOpacity onPress={() => handleSelectGym(gym.id)} activeOpacity={0.85} style={{ flexDirection: 'row' }}>
               <Image source={{ uri: gym.image }} style={styles.gymImage} />
               <View style={{ flex: 1, marginLeft: 16 }}>
@@ -392,6 +486,18 @@ const styles = StyleSheet.create({
   searchResultMeta: { fontSize: 13, color: '#6e6e73', marginTop: 2 },
   searchResultRating: { fontSize: 12, color: '#6e6e73', marginLeft: 4 },
   noResultsText: { textAlign: 'center', fontSize: 15, color: '#6e6e73', marginTop: 32 },
+  goalsSection: { marginBottom: 24, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 16, padding: 16 },
+  goalsSectionTitle: { fontSize: 16, fontWeight: '700', color: '#1d1d1f', marginBottom: 12 },
+  goalsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  goalButton: { width: '48%', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 12, backgroundColor: '#f5f5f7', marginBottom: 8 },
+  goalButtonSelected: {},
+  goalButtonText: { fontSize: 12, color: '#6e6e73', marginTop: 6, textAlign: 'center' },
+  goalButtonTextSelected: { fontWeight: '600' },
+  matchScoreBadge: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(255,60,32,0.9)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, zIndex: 10 },
+  matchScoreBadgeExcellent: { backgroundColor: 'rgba(76, 175, 80, 0.9)' },
+  matchScoreBadgeGood: { backgroundColor: 'rgba(255, 193, 7, 0.9)' },
+  matchScoreBadgeFair: { backgroundColor: 'rgba(244, 67, 54, 0.9)' },
+  matchScoreText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 });
 
 export default SelectGymNative;

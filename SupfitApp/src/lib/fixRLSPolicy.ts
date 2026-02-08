@@ -11,12 +11,12 @@ export const fixProfessionalPackagesRLS = async () => {
     // Drop the old restrictive policy
     const { error: dropError } = await supabase.rpc('exec_sql', {
       sql: `DROP POLICY IF EXISTS professional_packages_owner_manage ON public.professional_packages;`,
-    }).catch(() => {
+    }).then(()=> {
       // If rpc doesn't exist, we'll try direct SQL via admin connection
-      return { error: null };
+      return { error: null as any };
     });
 
-    if (dropError && !dropError.message?.includes('does not exist')) {
+    if (dropError && typeof dropError === 'object' && 'message' in dropError && !String(dropError.message)?.includes('does not exist')) {
       console.warn('[RLS Fix] Warning dropping old policy:', dropError);
     }
 

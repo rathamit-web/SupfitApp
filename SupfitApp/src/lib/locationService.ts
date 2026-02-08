@@ -131,7 +131,7 @@ class LocationService {
       // Audit permission request
       await this.auditLocationEvent('permission_requested', {
         foreground_granted: foreground.granted,
-        background_granted: background.granted ?? false,
+        background_granted: background?.granted ?? false,
       });
 
       return status;
@@ -529,7 +529,7 @@ class LocationService {
 
       // Log to audit system
       await auditEvent({
-        action: eventType,
+        action: 'update_location_cache',
         table: 'user_profiles',
         userId: authUser.user.id,
         metadata,

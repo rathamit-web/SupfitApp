@@ -11,7 +11,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import { Video, ResizeMode } from 'expo-video';
+// import { Video, ResizeMode } from 'expo-video'; // Not available - use Image with video badge instead
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -1390,7 +1390,7 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
                 {/* Show the user-provided name beside the profile picture */}
                 {isProfileLoading ? (
                   <View style={styles.skeletonLoader}>
-                    <View style={[styles.skeletonPlaceholder, { width: 150, height: 28 }]} />
+                    <View style={[styles.skeletonLoader, { width: 150, height: 28 }]} />
                   </View>
                 ) : (
                   <Text style={styles.profileName}>
@@ -1410,7 +1410,7 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
               </View>
               {isProfileLoading ? (
                 <View style={[styles.skeletonLoader, { marginTop: 8 }]}>
-                  <View style={[styles.skeletonPlaceholder, { width: 200, height: 16 }]} />
+                  <View style={[styles.skeletonLoader, { width: 200, height: 16 }]} />
                 </View>
               ) : (
                 <Text style={styles.profileTitle}>{coachTitle || ''}</Text>
@@ -1475,36 +1475,19 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
                         accessibilityHint="Double tap to select a new image or video for this workout"
                       >
                         <View style={styles.postImageContainer}>
-                          {mediaType === 'video' && mediaUrl ? (
-                            <Video
-                              source={{ uri: mediaUrl }}
-                              style={styles.postImage}
-                              resizeMode={ResizeMode.COVER}
-                              useNativeControls
-                              isLooping={false}
-                              shouldPlay={false}
-                            />
-                          ) : (
-                            <Image
-                              source={getValidImageSource(
-                                mediaUrl || post.image,
-                                { uri: DEFAULT_WORKOUT_IMAGE }
-                              )}
-                              style={styles.postImage}
-                              resizeMode="cover"
-                              fadeDuration={0}
-                              accessibilityLabel={`${post.workout} workout image`}
-                              accessibilityHint="Double tap to change this workout image"
-                            />
-                          )}
-                          {mediaType === 'video' && (
+                          <Image
+                            source={getValidImageSource(
+                              mediaUrl || post.image,
+                              require('../../assets/placeholder.png'),
+                            )}
+                            style={styles.postImage}
+                            resizeMode="cover"
+                          />
+                          {mediaType === 'video' && mediaUrl && (
                             <View style={styles.videoBadge}>
-                              <MaterialIcons name="play-circle-filled" size={32} color="#ffffff" />
+                              <MaterialIcons name="play-arrow" size={24} color="#fff" />
                             </View>
                           )}
-                          <View style={styles.imageEditOverlay}>
-                            <MaterialIcons name="edit" size={18} color="#ff3c20" />
-                          </View>
                           {isUploading === post.id && (
                             <View style={styles.uploadingOverlay}>
                               <Text style={styles.uploadingText}>Uploading...</Text>
@@ -2478,10 +2461,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  skeletonPlaceholder: {
-    backgroundColor: '#e5e5ea',
-    borderRadius: 8,
-    overflow: 'hidden',
+  clientLoadingText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
   },
 });
 

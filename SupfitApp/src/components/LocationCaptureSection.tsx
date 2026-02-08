@@ -19,7 +19,7 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  AlertIOS,
+  Alert,
   Platform,
   StyleSheet,
   Switch,
@@ -98,7 +98,7 @@ const LocationCaptureSection: React.FC<LocationCaptureSectionProps> = ({ address
           `To enable, go to Settings > SupfitApp > Location, then select "Always" or "While Using App"`;
 
         if (Platform.OS === 'ios') {
-          AlertIOS.alert('Location Permission Required', message, [
+          Alert.alert('Location Permission Required', message, [
             { text: 'OK', onPress: () => {} },
             {
               text: 'Open Settings',
@@ -331,7 +331,7 @@ const LocationCaptureSection: React.FC<LocationCaptureSectionProps> = ({ address
             style={styles.revokeButton}
             onPress={() => {
               if (Platform.OS === 'ios') {
-                AlertIOS.alert(
+                Alert.alert(
                   'Revoke Location Permission?',
                   'This will clear all saved location data and disable location-based features.',
                   [

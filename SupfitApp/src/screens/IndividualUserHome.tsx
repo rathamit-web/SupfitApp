@@ -1,13 +1,10 @@
 import * as ImageManipulator from 'expo-image-manipulator';
-// NOTE: For graceful fallback, add a placeholder image at: src/assets/images/placeholder.png
-// import placeholderImg from '../assets/images/placeholder.png'; // Disabled: placeholder not present yet
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUserHome } from '../hooks/useUserHome';
 import type { UserHomeData, WorkoutPost } from '../types/userHome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SUBSCRIPTION_KEYS } from '../lib/subscriptionStorage';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, TextInput, Platform, Modal } from 'react-native';
-import { Video, ResizeMode } from 'expo-video';
 import Toast from 'react-native-root-toast';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
@@ -177,7 +174,7 @@ function IndividualUserHome({ navigation, route }: any) {
     run();
   }, [userId, syncDailyMetrics]);
 
-  // --- Helper constants and functions (now inside component for correct scope) ---
+  // MIME type validation sets
   const ALLOWED_IMAGE_MIME_TYPES = new Set([
     'image/jpeg',
     'image/png',
@@ -375,8 +372,6 @@ function IndividualUserHome({ navigation, route }: any) {
   const [newWorkoutText, setNewWorkoutText] = useState('');
   const [newCaptionText, setNewCaptionText] = useState('');
 
-  // (Legacy DB fetch for user info removed; now handled by useUserHome)
-
   // Save user info to DB
   const handleSaveName = async () => {
     setSavingName(true);
@@ -533,17 +528,6 @@ function IndividualUserHome({ navigation, route }: any) {
       };
     }
   }, []);
-
-  /**
-   * Validates image file type and size with comprehensive checks
-   * @returns error message string if invalid, null if valid
-   */
-  // Removed unused validateImage function
-
-  /**
-   * Shows error toast with consistent styling for accessibility
-   */
-  // Removed unused showErrorToast function
 
   /**
    * Shows success toast with consistent styling
@@ -810,8 +794,7 @@ function IndividualUserHome({ navigation, route }: any) {
     }
   };
 
-  // Helper for web file input for workout image
-  // updateWorkoutImage removed (legacy local state)
+
 
   function handleWorkoutFileInput(
     e: any,
@@ -986,9 +969,7 @@ function IndividualUserHome({ navigation, route }: any) {
     },
   ];
 
-  // Weekly Schedule state (legacy, not from userHome)
-  const [todaySchedule] = useState<any>(null);
-  // (Navigation/focus logic removed for brevity)
+  // Note: Weekly schedule state and navigation/focus logic removed (legacy, not from userHome)
 
   type SubscriptionKind = 'gym' | 'coach' | 'dietician';
   type SubscriptionStatus = 'paid' | 'unpaid';
@@ -1103,12 +1084,10 @@ function IndividualUserHome({ navigation, route }: any) {
   const fetchLikes = async (postId: number) => {
     setLoadingLikes(true);
     try {
-      // Avoid joining `users` (often blocked by RLS). Use user_id only.
       const { data, error } = await supabaseClient
         .from('workout_likes')
         .select('id, user_id')
         .eq('workout_id', postId);
-      setLoadingLikes(false);
       if (error) throw error;
 
       setLikesData(
@@ -1119,12 +1098,13 @@ function IndividualUserHome({ navigation, route }: any) {
         }))
       );
     } catch {
-      // Local fallback
-      setLoadingLikes(false);
+      // Local fallback on error
       setLikesData([
         { id: 1, name: 'Sarah Johnson', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80' },
         { id: 2, name: 'Mike Chen', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
       ]);
+    } finally {
+      setLoadingLikes(false);
     }
   };
 
@@ -1137,8 +1117,6 @@ function IndividualUserHome({ navigation, route }: any) {
         .select('id, user_id, message, likes')
         .eq('workout_id', postId)
         .order('created_at', { ascending: true });
-
-      setLoadingComments(false);
       if (error) throw error;
 
       setCommentsData(
@@ -1151,7 +1129,6 @@ function IndividualUserHome({ navigation, route }: any) {
         }))
       );
     } catch {
-      setLoadingComments(false);
       setCommentsData([
         {
           id: 1,
@@ -1161,6 +1138,8 @@ function IndividualUserHome({ navigation, route }: any) {
           likes: 2,
         },
       ]);
+    } finally {
+      setLoadingComments(false);
     }
   };
 
@@ -1189,9 +1168,6 @@ function IndividualUserHome({ navigation, route }: any) {
       }));
     }
   };
-
-  // Add a like
-  // Removed unused addLike function
 
   // Add a comment
   const addComment = async (postId: number, userIdForInsert: string | null, message: string) => {
@@ -1454,24 +1430,18 @@ function IndividualUserHome({ navigation, route }: any) {
                   accessibilityHint="Double tap to select a new image for this workout"
                 >
                   <View style={styles.postImageContainer}>
-                    {post.media_type === 'video' && post.image ? (
-                      <Video
-                        source={{ uri: post.image }}
-                        style={styles.postImage}
-                        resizeMode={ResizeMode.COVER}
-                        useNativeControls
-                        isLooping={false}
-                        shouldPlay={false}
-                      />
-                    ) : (
-                      <Image
-                        source={post.image ? { uri: post.image } : { uri: DEFAULT_WORKOUT_IMAGE }}
-                        style={styles.postImage}
-                        resizeMode="cover"
-                        fadeDuration={0}
-                        accessibilityLabel={`${post.workout} workout image`}
-                        accessibilityHint="Double tap to change this workout image"
-                      />
+                    <Image
+                      source={post.image ? { uri: post.image } : { uri: DEFAULT_WORKOUT_IMAGE }}
+                      style={styles.postImage}
+                      resizeMode="cover"
+                      fadeDuration={0}
+                      accessibilityLabel={`${post.workout} workout image`}
+                      accessibilityHint="Double tap to change this workout image"
+                    />
+                    {post.media_type === 'video' && (
+                      <View style={styles.videoBadge}>
+                        <MaterialIcons name="play-arrow" size={20} color="#fff" />
+                      </View>
                     )}
                     {post.media_type === 'video' && (
                       <View style={styles.videoBadge}>
@@ -1592,150 +1562,90 @@ function IndividualUserHome({ navigation, route }: any) {
           ))}
         </View>
 
-        {/* Today's Schedule Section */}
-        {todaySchedule && (
-          <View style={styles.sectionWrap}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Today&apos;s Schedule</Text>
-              <Text style={styles.sectionSubtitle}>{todaySchedule.day}</Text>
-            </View>
-            <View style={styles.scheduleCard}>
-              {todaySchedule.slots.slice(0, 3).map((slot: any) => (
-                <View key={slot.time} style={styles.scheduleSlot}>
-                  <View style={styles.scheduleTimeWrap}>
-                    <MaterialIcons name="schedule" size={16} color="#ff3c20" />
-                    <Text style={styles.scheduleTime}>{slot.time}</Text>
-                  </View>
-                  <Text style={styles.scheduleActivity}>{slot.activity}</Text>
-                  {slot.notes && <Text style={styles.scheduleNotes}>{slot.notes}</Text>}
-                </View>
-              ))}
-              {todaySchedule.slots.length > 3 && (
-                <Text style={styles.scheduleMore}>+{todaySchedule.slots.length - 3} more sessions</Text>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Discover Professionals - Search Section */}
-        <View style={styles.sectionWrap}>
-          <Text style={styles.sectionTitle}>Discover Professionals</Text>
-          
-          <TouchableOpacity
-            style={styles.searchProfessionalButton}
-            onPress={() => {
-              navigation?.navigate?.('SearchCriteria');
-            }}
-            activeOpacity={0.9}
-          >
-            <MaterialIcons name="search" size={24} color="#FFF" />
-            
-            <View style={{ flex: 1 }}>
-              <Text style={styles.searchProfessionalTitle}>
-                Search by Goal
-              </Text>
-              <Text style={styles.searchProfessionalSubtitle}>
-                Find the perfect professional for you
-              </Text>
-            </View>
-            
-            <MaterialIcons name="chevron-right" size={24} color="#FFF" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Subscriptions Section - Collapsible List */}
+        {/* Subscriptions Section - Modern Card Layout */}
         <View style={styles.sectionWrap}>
           <Text style={styles.sectionTitle}>My Subscriptions</Text>
-          <View style={styles.subscriptionListContainer}>
-            {subscriptions.map((sub, index) => {
-              const isExpanded = expandedSubscriptions.has(sub.id);
-              const hasActiveSubscription = sub.status === 'paid';
-              const isLast = index === subscriptions.length - 1;
-              return (
-                <View key={sub.id} style={[styles.subscriptionListItem, isLast && styles.subscriptionListItem_last]}>
-                  {/* Collapsed View - Clickable Row */}
-                  <TouchableOpacity
-                    onPress={() => toggleSubscriptionExpanded(sub.id)}
-                    style={styles.subscriptionListItemHeader}
-                    activeOpacity={0.7}
+          
+          {/* Active Subscriptions - Hero Cards */}
+          <View style={styles.activeSubscriptionsContainer}>
+            {subscriptions
+              .filter(sub => sub.status === 'paid')
+              .map((sub) => (
+                <View key={sub.id} style={styles.subscriptionHeroCard}>
+                  <LinearGradient
+                    colors={['#ff5944', '#ff3c20']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.subscriptionHeroGradient}
                   >
-                    <View style={styles.subscriptionListItemLeft}>
+                    <View style={styles.subscriptionHeroTop}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.subscriptionHeroTitle}>{sub.typeLabel}</Text>
+                        <Text style={styles.subscriptionHeroPackage}>{sub.packageName || 'Premium'}</Text>
+                      </View>
                       <MaterialIcons
-                        name={isExpanded ? 'expand-less' : 'expand-more'}
-                        size={24}
-                        color="#ff3c20"
-                        style={styles.subscriptionExpandIcon}
+                        name={sub.id === 'gym' ? 'fitness-center' : sub.id === 'coach' ? 'person' : 'restaurant'}
+                        size={32}
+                        color="#fff"
                       />
-                      <View style={styles.subscriptionListItemLabels}>
-                        <Text style={styles.subscriptionListItemName}>{sub.typeLabel}</Text>
-                        <Text style={styles.subscriptionListItemStatus}>
-                          {sub.status === 'paid' ? 'Active' : 'Find One'}
+                    </View>
+
+                    <View style={styles.subscriptionHeroBottom}>
+                      <View>
+                        <Text style={styles.subscriptionHeroRenewLabel}>RENEWS ON</Text>
+                        <Text style={styles.subscriptionHeroRenewDate}>
+                          {sub.validUpto ? new Date(sub.validUpto).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                         </Text>
                       </View>
-                    </View>
-                    <View style={{
-                      backgroundColor: sub.status === 'paid' ? 'rgba(52, 199, 89, 0.12)' : 'rgba(255, 60, 32, 0.12)',
-                      borderRadius: 6,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                    }}>
-                      <Text style={{
-                        color: sub.status === 'paid' ? '#34c759' : '#ff3c20',
-                        fontWeight: '700',
-                        fontSize: 11,
-                      }}>
-                        {sub.status === 'paid' ? 'Active' : 'Find One'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Expanded View - Details */}
-                  {isExpanded && (
-                    <View style={styles.subscriptionListItemExpanded}>
-                      <View style={styles.subscriptionDetailsContainer}>
-                        <View style={styles.subscriptionDetailRow}>
-                          <Text style={styles.subscriptionDetailLabel}>Provider:</Text>
-                          <Text style={styles.subscriptionDetailValue}>{sub.name}</Text>
-                        </View>
-
-                        <View style={styles.subscriptionDetailRow}>
-                          <Text style={styles.subscriptionDetailLabel}>Amount:</Text>
-                          <Text style={styles.subscriptionDetailValue}>{sub.amount}</Text>
-                        </View>
-
-                        {sub.validUpto && (
-                          <View style={styles.subscriptionDetailRow}>
-                            <Text style={styles.subscriptionDetailLabel}>Valid Until:</Text>
-                            <Text style={styles.subscriptionDetailValue}>
-                              {new Date(sub.validUpto).toLocaleDateString()}
-                            </Text>
-                          </View>
-                        )}
-
-                        {sub.packageName && (
-                          <View style={styles.subscriptionDetailRow}>
-                            <Text style={styles.subscriptionDetailLabel}>Package:</Text>
-                            <Text style={styles.subscriptionDetailValue}>{sub.packageName}</Text>
-                          </View>
-                        )}
-                      </View>
-
                       <TouchableOpacity
-                        style={[styles.subscriptionExpandButton, hasActiveSubscription && styles.subscriptionExpandButtonModify]}
-                        onPress={() => navigation?.navigate?.(sub.navigateTo, { openSearchModal: !hasActiveSubscription })}
-                        accessibilityLabel={`${hasActiveSubscription ? 'Modify' : 'Search'} ${sub.typeLabel}`}
+                        style={styles.subscriptionHeroModifyBtn}
+                        onPress={() => navigation?.navigate?.(sub.navigateTo)}
                       >
-                        <Text style={styles.subscriptionExpandButtonText}>
-                          {hasActiveSubscription ? 'Modify' : 'Search'}
-                        </Text>
+                        <Text style={styles.subscriptionHeroModifyText}>MODIFY</Text>
                       </TouchableOpacity>
                     </View>
-                  )}
+                  </LinearGradient>
                 </View>
-              );
-            })}
+              ))}
           </View>
+
+          {/* Inactive Subscriptions - Available Services */}
+          {subscriptions.some(sub => sub.status !== 'paid') && (
+            <View style={styles.availableServicesContainer}>
+              <Text style={styles.availableServicesTitle}>AVAILABLE SERVICES</Text>
+              <View style={styles.availableServicesGrid}>
+                {subscriptions
+                  .filter(sub => sub.status !== 'paid')
+                  .map((sub) => (
+                    <View key={sub.id} style={styles.serviceCard}>
+                      <View style={styles.serviceCardTop}>
+                        <View style={styles.serviceIconContainer}>
+                          <MaterialIcons
+                            name={sub.id === 'gym' ? 'location-city' : sub.id === 'coach' ? 'person-outline' : 'restaurant-menu'}
+                            size={24}
+                            color="#ff3c20"
+                          />
+                        </View>
+                        <Text style={styles.serviceCardTitle}>{sub.typeLabel}</Text>
+                      </View>
+                      <Text style={styles.serviceCardDescription}>
+                        {sub.id === 'gym' ? 'Book your fitness center'
+                          : sub.id === 'coach' ? 'Get coach your workout'
+                          : 'Meal plans from expert'}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.serviceCardButton}
+                        onPress={() => navigation?.navigate?.(sub.navigateTo)}
+                      >
+                        <Text style={styles.serviceCardButtonText}>FIND ONE</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+              </View>
+            </View>
+          )}
         </View>
+
 
         {/* Diet Recommendation Section */}
         <View style={styles.sectionWrap}>
@@ -1974,7 +1884,7 @@ const styles = StyleSheet.create({
   searchProfessionalButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#ff3c20',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 16,
@@ -2186,9 +2096,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   subscriptionExpandButtonModify: {
     backgroundColor: '#34c759',
+  },
+  subscriptionSearchButton: {
+    backgroundColor: '#ff3c20',
+    flexDirection: 'row',
   },
   subscriptionExpandButtonText: {
     color: '#fff',
@@ -2523,6 +2439,145 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 14,
+  },
+
+  // New subscription styles - hero cards
+  activeSubscriptionsContainer: {
+    marginBottom: 24,
+  },
+  subscriptionHeroCard: {
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+  },
+  subscriptionHeroGradient: {
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  subscriptionHeroTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  subscriptionHeroTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: 4,
+  },
+  subscriptionHeroPackage: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  subscriptionHeroBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  subscriptionHeroRenewLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.7)',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  subscriptionHeroRenewDate: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  subscriptionHeroModifyBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  subscriptionHeroModifyText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+    letterSpacing: 0.5,
+  },
+
+  // Available services section
+  availableServicesContainer: {
+    marginBottom: 32,
+  },
+  availableServicesTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6e6e73',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+  },
+  availableServicesGrid: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  serviceCard: {
+    width: '48%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#f5f5f7',
+  },
+  serviceCardTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  serviceIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 60, 32, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  serviceCardTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1d1d1f',
+  },
+  serviceCardDescription: {
+    fontSize: 12,
+    color: '#8e8e93',
+    marginBottom: 12,
+    lineHeight: 16,
+  },
+  serviceCardButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#ff3c20',
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  serviceCardButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
 
 });

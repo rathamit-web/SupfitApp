@@ -274,6 +274,41 @@ export default function ProfessionalDetailNative({
           </View>
         </View>
 
+        {/* Match Score Explanation Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Why This Match ({professional.match_score}%)?</Text>
+          <View style={styles.matchScoreBreakdown}>
+            <View style={styles.signalItem}>
+              <View style={[styles.signalDot, { backgroundColor: '#FF9800' }]} />
+              <View style={styles.signalContent}>
+                <Text style={styles.signalLabel}>Expertise Match</Text>
+                <Text style={styles.signalValue}>Aligns with your fitness goals</Text>
+              </View>
+            </View>
+            <View style={styles.signalItem}>
+              <View style={[styles.signalDot, { backgroundColor: '#4CAF50' }]} />
+              <View style={styles.signalContent}>
+                <Text style={styles.signalLabel}>High Rating</Text>
+                <Text style={styles.signalValue}>{professional.rating ? professional.rating.toFixed(1) : 'N/A'} stars from reviews</Text>
+              </View>
+            </View>
+            <View style={styles.signalItem}>
+              <View style={[styles.signalDot, { backgroundColor: '#2196F3' }]} />
+              <View style={styles.signalContent}>
+                <Text style={styles.signalLabel}>Proximity</Text>
+                <Text style={styles.signalValue}>{professional.distance_km.toFixed(1)} km away</Text>
+              </View>
+            </View>
+            <View style={styles.signalItem}>
+              <View style={[styles.signalDot, { backgroundColor: '#9C27B0' }]} />
+              <View style={styles.signalContent}>
+                <Text style={styles.signalLabel}>Availability</Text>
+                <Text style={styles.signalValue}>Flexible scheduling available</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Specialties Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Specialties</Text>
@@ -292,7 +327,7 @@ export default function ProfessionalDetailNative({
 
           {packages.length === 0 ? (
             <View style={styles.noPackagesContainer}>
-              <MaterialIcons name="package" size={40} color="#CCC" />
+              <MaterialIcons name="folder-open" size={40} color="#CCC" />
               <Text style={styles.noPackagesText}>
                 No packages available at the moment
               </Text>
@@ -649,6 +684,38 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 12,
+  },
+  matchScoreBreakdown: {
+    gap: 12,
+  },
+  signalItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#F9F9F9',
+    borderRadius: 8,
+  },
+  signalDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginTop: 4,
+    flexShrink: 0,
+  },
+  signalContent: {
+    flex: 1,
+  },
+  signalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  signalValue: {
+    fontSize: 12,
+    color: '#999',
   },
   tagContainer: {
     flexDirection: 'row',
