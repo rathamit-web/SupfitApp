@@ -39,6 +39,15 @@ interface ProfessionalPackage {
   feature_list: string[];
 }
 
+interface Review {
+  id: string;
+  reviewerName: string;
+  rating: number;
+  content: string;
+  createdAt: string;
+  helpfulCount: number;
+}
+
 interface ProfessionalDetailProps {
   route: any;
   navigation: any;
@@ -53,6 +62,12 @@ export default function ProfessionalDetailNative({
     passedProfessional || null
   );
   const [packages, setPackages] = useState<ProfessionalPackage[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsPage, setReviewsPage] = useState(0);
+  const [hasMoreReviews, setHasMoreReviews] = useState(true);
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [loading, setLoading] = useState(!passedProfessional);
   const [selectedPackage, setSelectedPackage] = useState<ProfessionalPackage | null>(null);
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
@@ -74,6 +89,8 @@ export default function ProfessionalDetailNative({
     } else {
       fetchPackages();
     }
+    // Fetch reviews for this professional
+    fetchReviews(0);
   }, [professionalId, passedProfessional]);
 
   const fetchProfessionalDetails = async () => {
@@ -116,6 +133,70 @@ export default function ProfessionalDetailNative({
       console.error('Error fetching packages:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReviews = async (page: number = 0) => {
+    if (reviewsLoading || !professional) return;
+
+    try {
+      setReviewsLoading(true);
+      const pageSize = 5;
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+
+      // First, get all packages for this professional
+      const { data: packagesData, error: packagesError } = await supabaseClient
+        .from('professional_packages')
+        .select('id')
+        .eq('owner_user_id', professional.owner_user_id);
+
+      if (packagesError) throw packagesError;
+
+      const packageIds = packagesData?.map((p: any) => p.id) || [];
+      
+      if (packageIds.length === 0) {
+        setReviews([]);
+        setHasMoreReviews(false);
+        return;
+      }
+
+      // Fetch approved reviews for all packages
+      const { data, error } = await supabaseClient
+        .from('professional_reviews')
+        .select('id, reviewer_name, rating, content, created_at, helpful_count, response_text')
+        .in('professional_package_id', packageIds)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+
+      const newReviews = (data || []).map((review: any) => ({
+        id: review.id,
+        reviewerName: review.reviewer_name || 'Anonymous',
+        rating: review.rating,
+        content: review.content,
+        createdAt: review.created_at,
+        helpfulCount: review.helpful_count || 0,
+      }));
+
+      if (page === 0) {
+        setReviews(newReviews);
+      } else {
+        setReviews([...reviews, ...newReviews]);
+      }
+
+      setHasMoreReviews(newReviews.length === pageSize);
+      setReviewsPage(page);
+    } catch (err) {
+      console.error('Error fetching reviews:', err);
+      Toast.show('Error loading reviews', {
+        duration: Toast.durations.SHORT,
+        position: Toast.positions.BOTTOM,
+      });
+    } finally {
+      setReviewsLoading(false);
     }
   };
 
@@ -350,6 +431,101 @@ export default function ProfessionalDetailNative({
           )}
         </View>
 
+        {/* Reviews Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderWithAction}>
+            <Text style={styles.sectionTitle}>Reviews ({professional.review_count})</Text>
+            {reviews.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  if (hasMoreReviews) {
+                    fetchReviews(reviewsPage + 1);
+                  }
+                }}
+                disabled={!hasMoreReviews || reviewsLoading}
+              >
+                <Text style={styles.seeAllLink}>
+                  {hasMoreReviews ? 'Load More' : ''}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {reviews.length === 0 ? (
+            <View style={styles.noReviewsContainer}>
+              <MaterialIcons name="rate-review" size={40} color="#CCC" />
+              <Text style={styles.noReviewsText}>
+                No reviews yet. Be the first to share your experience!
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={reviews}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.reviewCard}
+                  onPress={() => {
+                    setSelectedReview(item);
+                    setShowReviewModal(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.reviewHeader}>
+                    <View>
+                      <Text style={styles.reviewerName}>{item.reviewerName}</Text>
+                      <View style={styles.ratingContainer}>
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <MaterialIcons
+                            key={i}
+                            name={i < item.rating ? 'star' : 'star-outline'}
+                            size={14}
+                            color={i < item.rating ? '#FFB800' : '#CCC'}
+                          />
+                        ))}
+                        <Text style={styles.ratingText}>
+                          {item.rating}.0 • {new Date(item.createdAt).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <Text
+                    style={styles.reviewContent}
+                    numberOfLines={3}
+                    ellipsizeMode="tail"
+                  >
+                    {item.content}
+                  </Text>
+                  <View style={styles.reviewFooter}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Toast.show('👍 Marked as helpful', {
+                          duration: Toast.durations.SHORT,
+                          position: Toast.positions.BOTTOM,
+                        });
+                      }}
+                    >
+                      <Text style={styles.helpfulText}>
+                        👍 {item.helpfulCount} found helpful
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              ListFooterComponent={
+                reviewsLoading && reviews.length > 0 ? (
+                  <ActivityIndicator
+                    size="small"
+                    color="#666"
+                    style={{ marginVertical: 12 }}
+                  />
+                ) : null
+              }
+            />
+          )}
+        </View>
+
         {/* About Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Why Choose This Professional?</Text>
@@ -389,6 +565,13 @@ export default function ProfessionalDetailNative({
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Review Detail Modal */}
+      <ReviewModal
+        visible={showReviewModal}
+        review={selectedReview}
+        onClose={() => setShowReviewModal(false)}
+      />
 
       {/* Subscribe Modal */}
       <SubscribeModal
@@ -458,6 +641,102 @@ const BenefitItem: React.FC<{ icon: string; text: string }> = ({ icon, text }) =
     <Text style={styles.benefitText}>{text}</Text>
   </View>
 );
+
+const ReviewModal: React.FC<{
+  visible: boolean;
+  review: Review | null;
+  onClose: () => void;
+}> = ({ visible, review, onClose }) => {
+  if (!visible || !review) return null;
+
+  return (
+    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.reviewModalOverlay}>
+        <View style={styles.reviewModalContent}>
+          <View style={styles.reviewModalHeader}>
+            <Text style={styles.reviewModalTitle}>Review</Text>
+            <TouchableOpacity onPress={onClose}>
+              <MaterialIcons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.reviewModalBody}>
+            <View style={styles.reviewModalAuthor}>
+              <View style={styles.authorAvatar}>
+                <Text style={styles.avatarInitial}>
+                  {review.reviewerName.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.authorInfo}>
+                <Text style={styles.authorName}>{review.reviewerName}</Text>
+                <View style={styles.modalRatingContainer}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <MaterialIcons
+                      key={i}
+                      name={i < review.rating ? 'star' : 'star-outline'}
+                      size={16}
+                      color={i < review.rating ? '#FFB800' : '#CCC'}
+                    />
+                  ))}
+                  <Text style={styles.modalRatingText}>{review.rating}.0 stars</Text>
+                </View>
+                <Text style={styles.reviewDate}>
+                  {new Date(review.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.reviewFullContent}>
+              <Text style={styles.reviewFullText}>{review.content}</Text>
+            </View>
+
+            <View style={styles.reviewActions}>
+              <TouchableOpacity
+                style={styles.helpfulButton}
+                onPress={() => {
+                  Toast.show('👍 Thanks for your feedback!', {
+                    duration: Toast.durations.SHORT,
+                    position: Toast.positions.BOTTOM,
+                  });
+                }}
+              >
+                <MaterialIcons name="thumb-up" size={18} color="#4CAF50" />
+                <Text style={styles.helpfulButtonText}>
+                  Helpful ({review.helpfulCount})
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.reportButton}
+                onPress={() => {
+                  Toast.show('Review reported', {
+                    duration: Toast.durations.SHORT,
+                    position: Toast.positions.BOTTOM,
+                  });
+                }}
+              >
+                <MaterialIcons name="flag" size={18} color="#FF6B35" />
+                <Text style={styles.reportButtonText}>Report</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+
+          <View style={styles.reviewModalFooter}>
+            <TouchableOpacity
+              style={styles.reviewCloseButton}
+              onPress={onClose}
+            >
+              <Text style={styles.reviewCloseButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const SubscribeModal: React.FC<{
   visible: boolean;
@@ -934,5 +1213,210 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#FFF',
+  },
+  // Review Styles
+  sectionHeaderWithAction: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  seeAllLink: {
+    fontSize: 12,
+    color: '#2078ff',
+    fontWeight: '600',
+  },
+  noReviewsContainer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  noReviewsText: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  reviewCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FFB800',
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  reviewerName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  ratingText: {
+    fontSize: 11,
+    color: '#666',
+    marginLeft: 4,
+  },
+  reviewContent: {
+    fontSize: 12,
+    color: '#555',
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  reviewFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  helpfulText: {
+    fontSize: 11,
+    color: '#4CAF50',
+    fontWeight: '500',
+  },
+  // Review Modal Styles
+  reviewModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  reviewModalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '85%',
+  },
+  reviewModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
+  reviewModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  reviewModalBody: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  reviewModalAuthor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  authorAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFB800',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarInitial: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  authorInfo: {
+    flex: 1,
+  },
+  authorName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  modalRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  modalRatingText: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 4,
+  },
+  reviewDate: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 2,
+  },
+  reviewFullContent: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  reviewFullText: {
+    fontSize: 13,
+    color: '#555',
+    lineHeight: 20,
+  },
+  reviewActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  helpfulButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    backgroundColor: '#F1F8F6',
+  },
+  helpfulButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#4CAF50',
+  },
+  reportButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FF6B35',
+    backgroundColor: '#FEF5F2',
+  },
+  reportButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#FF6B35',
+  },
+  reviewModalFooter: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EEE',
+  },
+  reviewCloseButton: {
+    backgroundColor: '#F5F5F5',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  reviewCloseButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
   },
 });

@@ -1478,7 +1478,7 @@ function CoachHomeScreen({ navigation }: CoachHomeScreenProps) {
                           <Image
                             source={getValidImageSource(
                               mediaUrl || post.image,
-                              require('../../assets/placeholder.png'),
+                              require('../../assets/images/react-logo.png'),
                             )}
                             style={styles.postImage}
                             resizeMode="cover"

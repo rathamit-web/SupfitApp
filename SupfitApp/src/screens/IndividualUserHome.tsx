@@ -372,6 +372,13 @@ function IndividualUserHome({ navigation, route }: any) {
   const [newWorkoutText, setNewWorkoutText] = useState('');
   const [newCaptionText, setNewCaptionText] = useState('');
 
+  // Feedback Modal State
+  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+  const [selectedSubscriptionForFeedback, setSelectedSubscriptionForFeedback] = useState<SubscriptionCard | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackReview, setFeedbackReview] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+
   // Save user info to DB
   const handleSaveName = async () => {
     setSavingName(true);
@@ -1034,6 +1041,117 @@ function IndividualUserHome({ navigation, route }: any) {
     setExpandedSubscriptions(next);
   };
 
+  // Feedback Submit Handler - Aligned to professional_reviews table structure
+  const handleSubmitFeedback = async () => {
+    if (!selectedSubscriptionForFeedback || !userId) {
+      Toast.show('Error: Cannot submit feedback', {
+        duration: Toast.durations.SHORT,
+        backgroundColor: '#FF3C20',
+      });
+      return;
+    }
+
+    // Validate feedback
+    const feedbackText = feedbackReview.trim();
+    if (!feedbackText) {
+      Toast.show('Please write a review', {
+        duration: Toast.durations.SHORT,
+        backgroundColor: '#FF9800',
+      });
+      return;
+    }
+
+    if (feedbackRating < 1 || feedbackRating > 5) {
+      Toast.show('Please select a rating (1-5 stars)', {
+        duration: Toast.durations.SHORT,
+        backgroundColor: '#FF9800',
+      });
+      return;
+    }
+
+    setFeedbackSubmitting(true);
+    
+    try {
+      // Get user's subscription details to map to professional_package_id
+      const subscriptionType = selectedSubscriptionForFeedback.id; // 'coach', 'dietician', 'gym'
+      const storageKey = SUBSCRIPTION_KEYS[subscriptionType];
+      const subscriptionData = await AsyncStorage.getItem(storageKey);
+      
+      if (!subscriptionData) {
+        throw new Error('Subscription data not found');
+      }
+
+      const parsedData = JSON.parse(subscriptionData);
+      const professionalPackageId = parsedData.id || parsedData.professional_package_id;
+
+      if (!professionalPackageId) {
+        throw new Error('Professional package ID not found');
+      }
+
+      // Get user's name from profile
+      const { data: userProfile } = await supabaseClient
+        .from('user_profiles')
+        .select('full_name')
+        .eq('user_id', userId)
+        .single();
+
+      const reviewerName = userProfile?.full_name || 'Anonymous User';
+
+      // Fetch professional details for context
+      const { data: professionalDetails } = await supabaseClient
+        .from('professional_packages')
+        .select('id, professional_id, name, description, specialties, mode')
+        .eq('id', professionalPackageId)
+        .single();
+
+      // Build feedback metadata with professional context
+      const feedbackData = {
+        professional_package_id: professionalPackageId,
+        reviewer_user_id: userId,
+        reviewer_name: reviewerName,
+        rating: parseFloat(feedbackRating.toFixed(2)), // NUMERIC(3,2) format
+        title: 'User Feedback',
+        content: feedbackText,
+        status: 'pending', // Awaits professional approval
+        helpful_count: 0,
+        // Additional context for professionals
+        professional_name: professionalDetails?.name || 'Professional',
+        subscription_type: subscriptionType, // 'coach', 'dietician', 'gym'
+        subscription_package: selectedSubscriptionForFeedback.packageName || 'Premium',
+      };
+
+      // Insert feedback into professional_reviews table
+      const { error } = await supabaseClient
+        .from('professional_reviews')
+        .insert([feedbackData]);
+
+      if (error) {
+        console.error('Error submitting feedback:', error);
+        throw error;
+      }
+
+      // Success
+      Toast.show('✓ Feedback submitted for review!',{
+        duration: Toast.durations.SHORT,
+        backgroundColor: '#4CAF50',
+      });
+
+      // Reset form and close modal
+      setFeedbackModalVisible(false);
+      setSelectedSubscriptionForFeedback(null);
+      setFeedbackRating(5);
+      setFeedbackReview('');
+    } catch (error) {
+      console.error('Feedback submission error:', error);
+      Toast.show('Failed to submit feedback. Please try again.', {
+        duration: Toast.durations.SHORT,
+        backgroundColor: '#FF3C20',
+      });
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
+
   const loadSubscriptionsFromStorage = useCallback(async () => {
     try {
       const [gymRaw, coachRaw, dieticianRaw] = await Promise.all([
@@ -1597,12 +1715,31 @@ function IndividualUserHome({ navigation, route }: any) {
                           {sub.validUpto ? new Date(sub.validUpto).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
                         </Text>
                       </View>
-                      <TouchableOpacity
-                        style={styles.subscriptionHeroModifyBtn}
-                        onPress={() => navigation?.navigate?.(sub.navigateTo)}
-                      >
-                        <Text style={styles.subscriptionHeroModifyText}>MODIFY</Text>
-                      </TouchableOpacity>
+                      <View style={styles.subscriptionHeroButtonGroup}>
+                        <TouchableOpacity
+                          style={styles.subscriptionCapsuleButton}
+                          onPress={() => navigation?.navigate?.(sub.navigateTo)}
+                          accessibilityLabel={`Modify ${sub.typeLabel} subscription`}
+                          accessibilityRole="button"
+                        >
+                          <MaterialIcons name="edit" size={16} color="#fff" />
+                          <Text style={styles.subscriptionCapsuleButtonText}>MODIFY</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.subscriptionCapsuleButton}
+                          onPress={() => {
+                            setSelectedSubscriptionForFeedback(sub);
+                            setFeedbackModalVisible(true);
+                            setFeedbackRating(5);
+                            setFeedbackReview('');
+                          }}
+                          accessibilityLabel={`Send feedback for ${sub.typeLabel}`}
+                          accessibilityRole="button"
+                        >
+                          <MaterialIcons name="rate-review" size={16} color="#fff" />
+                          <Text style={styles.subscriptionCapsuleButtonText}>FEEDBACK</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </LinearGradient>
                 </View>
@@ -1856,6 +1993,156 @@ function IndividualUserHome({ navigation, route }: any) {
           </View>
         </View>
       )}
+
+      {/* Feedback Modal */}
+      <Modal
+        visible={feedbackModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => {
+          setFeedbackModalVisible(false);
+          setSelectedSubscriptionForFeedback(null);
+          setFeedbackRating(5);
+          setFeedbackReview('');
+        }}
+      >
+        <View style={styles.feedbackModalOverlay}>
+          <View style={styles.feedbackModalContent}>
+            {/* Header */}
+            <View style={styles.feedbackModalHeader}>
+              <Text style={styles.feedbackModalTitle}>Send Feedback</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setFeedbackModalVisible(false);
+                  setSelectedSubscriptionForFeedback(null);
+                  setFeedbackRating(5);
+                  setFeedbackReview('');
+                }}
+                style={styles.feedbackCloseBtn}
+              >
+                <MaterialIcons name="close" size={24} color="#1d1d1f" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Professional Context Card */}
+            {selectedSubscriptionForFeedback && (
+              <View style={styles.feedbackProfessionalCard}>
+                <View style={styles.feedbackCardHeader}>
+                  <View style={[
+                    styles.feedbackCardIcon,
+                    { 
+                      backgroundColor: selectedSubscriptionForFeedback.id === 'gym' 
+                        ? 'rgba(33, 150, 243, 0.1)' 
+                        : selectedSubscriptionForFeedback.id === 'coach'
+                        ? 'rgba(76, 175, 80, 0.1)'
+                        : 'rgba(255, 152, 0, 0.1)'
+                    }
+                  ]}>
+                    <MaterialIcons
+                      name={
+                        selectedSubscriptionForFeedback.id === 'gym'
+                          ? 'fitness-center'
+                          : selectedSubscriptionForFeedback.id === 'coach'
+                          ? 'person'
+                          : 'restaurant'
+                      }
+                      size={20}
+                      color={
+                        selectedSubscriptionForFeedback.id === 'gym'
+                          ? '#2196F3'
+                          : selectedSubscriptionForFeedback.id === 'coach'
+                          ? '#4CAF50'
+                          : '#FF9800'
+                      }
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.feedbackCardType}>{selectedSubscriptionForFeedback.typeLabel}</Text>
+                    <Text style={styles.feedbackCardPackage}>{selectedSubscriptionForFeedback.packageName || 'Premium Package'}</Text>
+                  </View>
+                </View>
+                <View style={styles.feedbackCardDetails}>
+                  <View style={styles.feedbackDetailItem}>
+                    <MaterialIcons name="check-circle" size={14} color="#4CAF50" />
+                    <Text style={styles.feedbackDetailText}>Active Subscription</Text>
+                  </View>
+                  <View style={styles.feedbackDetailItem}>
+                    <MaterialIcons name="calendar-today" size={14} color="#FF6B35" />
+                    <Text style={styles.feedbackDetailText}>
+                      Renews {selectedSubscriptionForFeedback.validUpto ? new Date(selectedSubscriptionForFeedback.validUpto).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'soon'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Rating Selector */}
+            <View style={styles.feedbackRatingSection}>
+              <Text style={styles.feedbackRatingLabel}>Your Rating</Text>
+              <View style={styles.feedbackStarContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setFeedbackRating(star)}
+                    style={styles.feedbackStarBtn}
+                  >
+                    <MaterialIcons
+                      name={star <= feedbackRating ? 'star' : 'star-outline'}
+                      size={36}
+                      color={star <= feedbackRating ? '#FFB800' : '#CCC'}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.feedbackRatingValue}>{feedbackRating}.0 Stars</Text>
+            </View>
+
+            {/* Review Text Input */}
+            <View style={styles.feedbackReviewSection}>
+              <Text style={styles.feedbackReviewLabel}>Your Review</Text>
+              <TextInput
+                style={styles.feedbackReviewInput}
+                placeholder="Share your experience with this service..."
+                placeholderTextColor="#999"
+                value={feedbackReview}
+                onChangeText={setFeedbackReview}
+                multiline={true}
+                numberOfLines={6}
+                textAlignVertical="top"
+                editable={!feedbackSubmitting}
+              />
+              <Text style={styles.feedbackCharCount}>
+                {feedbackReview.length}/500
+              </Text>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.feedbackButtonGroup}>
+              <TouchableOpacity
+                style={[styles.feedbackButton, styles.feedbackCancelBtn]}
+                onPress={() => {
+                  setFeedbackModalVisible(false);
+                  setSelectedSubscriptionForFeedback(null);
+                  setFeedbackRating(5);
+                  setFeedbackReview('');
+                }}
+                disabled={feedbackSubmitting}
+              >
+                <Text style={styles.feedbackCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.feedbackButton, styles.feedbackSubmitBtn]}
+                onPress={handleSubmitFeedback}
+                disabled={feedbackSubmitting}
+              >
+                <Text style={styles.feedbackSubmitBtnText}>
+                  {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <FooterNav />
 
@@ -2494,6 +2781,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
   },
+  subscriptionHeroButtonGroup: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+  },
+  // Apple Liquid Glass Capsule Button Style
+  subscriptionCapsuleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.20)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    backdropFilter: 'blur(20px)',
+    elevation: 3,
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+  subscriptionCapsuleButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 11,
+    letterSpacing: 0.6,
+  },
   subscriptionHeroModifyBtn: {
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -2578,6 +2896,186 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 12,
     letterSpacing: 0.5,
+  },
+
+  // Feedback Modal Styles
+  feedbackModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  feedbackModalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 32,
+    maxHeight: '90%',
+  },
+  feedbackModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  feedbackModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1d1d1f',
+  },
+  feedbackCloseBtn: {
+    padding: 8,
+  },
+  feedbackProfessionalCard: {
+    backgroundColor: '#f8f8f8',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e5e5e7',
+  },
+  feedbackCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  feedbackCardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feedbackCardType: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1d1d1f',
+    marginBottom: 2,
+  },
+  feedbackCardPackage: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6e6e73',
+  },
+  feedbackCardDetails: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  feedbackDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  feedbackDetailText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1d1d1f',
+  },
+  feedbackSubscriptionInfo: {
+    backgroundColor: '#f5f5f7',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 20,
+  },
+  feedbackSubscriptionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6e6e73',
+    marginBottom: 6,
+  },
+  feedbackSubscriptionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  feedbackSubscriptionName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1d1d1f',
+  },
+  feedbackRatingSection: {
+    marginBottom: 24,
+  },
+  feedbackRatingLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1d1d1f',
+    marginBottom: 12,
+  },
+  feedbackStarContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  feedbackStarBtn: {
+    padding: 4,
+  },
+  feedbackRatingValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6e6e73',
+    textAlign: 'center',
+  },
+  feedbackReviewSection: {
+    marginBottom: 24,
+  },
+  feedbackReviewLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1d1d1f',
+    marginBottom: 8,
+  },
+  feedbackReviewInput: {
+    borderWidth: 1,
+    borderColor: '#d5d5d7',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1d1d1f',
+    backgroundColor: '#fff',
+    marginBottom: 6,
+    height: 120,
+  },
+  feedbackCharCount: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8e8e93',
+    textAlign: 'right',
+  },
+  feedbackButtonGroup: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  feedbackButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  feedbackCancelBtn: {
+    backgroundColor: '#f5f5f7',
+    borderWidth: 1,
+    borderColor: '#e5e5e7',
+  },
+  feedbackCancelBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1d1d1f',
+  },
+  feedbackSubmitBtn: {
+    backgroundColor: '#FF6B35',
+  },
+  feedbackSubmitBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
   },
 
 });

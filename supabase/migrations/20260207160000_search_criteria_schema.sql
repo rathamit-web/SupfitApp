@@ -112,7 +112,10 @@ CREATE POLICY "search_history_insert_own"
 -- ============================================
 -- Step 8: Create search_professionals function
 -- ============================================
-CREATE OR REPLACE FUNCTION public.search_professionals_by_goals(
+-- Drop all versions of the function (may have multiple overloads)
+DROP FUNCTION IF EXISTS public.search_professionals_by_goals CASCADE;
+
+CREATE FUNCTION public.search_professionals_by_goals(
   p_user_id UUID,
   p_goal_categories TEXT[],
   p_preferred_mode TEXT[] DEFAULT NULL,
@@ -182,10 +185,10 @@ BEGIN
       END +
       -- Specialty overlap bonus (0-25)
       (
-        (array_length(array_intersect(pp.specialties, (
+        COALESCE(array_length(array_intersect(pp.specialties, (
           SELECT array_agg(professional_type::TEXT)
           FROM (SELECT UNNEST(p_goal_categories::TEXT[]) as professional_type) t
-        )), 1) COALESCE 0) * 5
+        )), 1), 0) * 5
       )
     ) as match_score
   FROM public.professional_packages pp
@@ -254,4 +257,7 @@ FROM (
 ) AS t;
 $$ LANGUAGE SQL IMMUTABLE;
 
-RAISE NOTICE '✓ Search criteria schema migration completed';
+DO $$
+BEGIN
+  RAISE NOTICE '✓ Search criteria schema migration completed';
+END $$;

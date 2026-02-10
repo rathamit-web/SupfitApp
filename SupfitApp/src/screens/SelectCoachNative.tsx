@@ -5,6 +5,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+// Issue #1 Fix: Import canonical path navigation
+// All navigation from SelectCoach ONLY goes to FindCoaches (single entry point)
+import { FindCoachesParamsV1 } from '../types/navigationParams';
+import { createNavigationParams } from '../types/navigationParams';
 
 type GoalCategory = 
   | 'weight_loss'
@@ -155,6 +159,26 @@ const SelectCoachNative = ({ route }: any) => {
     setSelectedPackage(packageId);
   };
 
+  // Issue #1 Fix: Canonical path handler
+  // Navigate to FindCoaches with source tracking for analytics
+  const handleFindProfessionals = () => {
+    try {
+      const params = createNavigationParams(
+        FindCoachesParamsV1,
+        {
+          source: 'SelectCoach',
+          timestamp: Date.now(),
+        },
+        'FindCoaches',
+      );
+      navigation.navigate('FindCoaches' as never, params as never);
+    } catch (error) {
+      console.error('Navigation to FindCoaches failed:', error);
+      // Fall back to direct navigation without validation
+      navigation.navigate('FindCoaches' as never, {} as never);
+    }
+  };
+
   const handleSubscribe = () => {
     if (!selectedCoach || !selectedPackage) return;
     setShowPaymentModal(true);
@@ -215,9 +239,19 @@ const SelectCoachNative = ({ route }: any) => {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <Text style={styles.title}>Select Your Coach</Text>
-          <TouchableOpacity onPress={() => setShowSearchModal(true)} style={styles.searchButton}>
-            <MaterialIcons name="search" size={20} color="#fff" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* Issue #1 Fix: Find Professionals button (canonical path) */}
+            <TouchableOpacity 
+              onPress={handleFindProfessionals} 
+              style={styles.findProButton}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="explore" size={20} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowSearchModal(true)} style={styles.searchButton}>
+              <MaterialIcons name="search" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Goal Criteria Section */}
@@ -404,35 +438,7 @@ const SelectCoachNative = ({ route }: any) => {
 const styles = StyleSheet.create({
   container: { padding: 24, paddingBottom: 48 },
   title: { fontSize: 26, fontWeight: '700', color: '#1d1d1f', marginBottom: 18, textAlign: 'center' },
-  card: { backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 18, marginBottom: 18, padding: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
-  cardSelected: { borderWidth: 2, borderColor: '#ff3c20' },
-  coachImage: { width: 100, height: 100, borderRadius: 14, backgroundColor: '#eee' },
-  coachName: { fontSize: 18, fontWeight: '700', color: '#1d1d1f' },
-  coachMeta: { fontSize: 13, color: '#6e6e73', marginTop: 2 },
-  coachRating: { fontSize: 15, fontWeight: '700', color: '#ffb300', marginLeft: 4 },
-  coachReviews: { fontSize: 12, color: '#6e6e73', marginLeft: 4 },
-  certTag: { backgroundColor: 'rgba(32,120,255,0.08)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, marginRight: 6, marginBottom: 4 },
-  certText: { fontSize: 12, color: '#2078ff' },
-  coachBio: { fontSize: 13, color: '#6e6e73', marginTop: 6 },
-  packagesWrap: { marginTop: 16, backgroundColor: 'rgba(245,245,247,0.95)', borderRadius: 14, padding: 14 },
-  packagesTitle: { fontSize: 16, fontWeight: '700', color: '#1d1d1f', marginBottom: 8 },
-  packageCard: { backgroundColor: '#fff', borderRadius: 10, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: '#eee' },
-  packageCardSelected: { borderColor: '#ff3c20', borderWidth: 2 },
-  packageName: { fontSize: 15, fontWeight: '700', color: '#1d1d1f' },
-  packagePrice: { fontSize: 13, color: '#6e6e73', marginTop: 2 },
-  featureTag: { backgroundColor: 'rgba(255,60,32,0.08)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, marginRight: 6, marginBottom: 4 },
-  featureText: { fontSize: 12, color: '#ff3c20' },
-  subscribeBtn: { backgroundColor: '#ff3c20', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 10 },
-  subscribeBtnDisabled: { backgroundColor: '#ffb3a1' },
-  subscribeBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.18)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', borderRadius: 18, padding: 28, width: '85%', alignItems: 'center' },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1d1d1f', marginBottom: 8 },
-  modalDesc: { fontSize: 15, color: '#6e6e73', marginBottom: 18, textAlign: 'center' },
-  confirmBtn: { backgroundColor: '#ff3c20', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 32, alignItems: 'center', marginBottom: 10 },
-  confirmBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  cancelBtn: { backgroundColor: '#eee', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 32, alignItems: 'center' },
-  cancelBtnText: { color: '#1d1d1f', fontWeight: '600', fontSize: 15 },
+  findProButton: { backgroundColor: '#2078ff', borderRadius: 10, padding: 10, alignItems: 'center', justifyContent: 'center' },
   searchButton: { backgroundColor: '#ff3c20', borderRadius: 10, padding: 10, alignItems: 'center', justifyContent: 'center' },
   searchModalContent: { backgroundColor: '#fff', borderRadius: 20, flex: 0.9, marginHorizontal: 16, marginVertical: 40, flexDirection: 'column', padding: 0, overflow: 'hidden' },
   searchModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },

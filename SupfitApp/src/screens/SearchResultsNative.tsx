@@ -13,6 +13,12 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import Toast from 'react-native-root-toast';
 import supabaseClient from '../../shared/supabaseClient';
+// Issue #3 & #6 Fix: Type safety + PII removal
+// Import Zod validation for route params
+import { 
+  ProfessionalDetailParamsV1, 
+  createNavigationParams 
+} from '../types/navigationParams';
 
 interface Professional {
   professional_id: string;
@@ -242,20 +248,59 @@ export default function SearchResultsNative({
   };
 
   const handleProfessionalPress = (professional: Professional) => {
-    // Log interaction
-    if (userId) {
-      supabaseClient.from('search_history').insert({
-        user_id: userId,
-        query_filters: { goals: selectedGoals, ...filters },
-        selected_professional_id: professional.professional_id,
-      }).then(() => console.log('Interaction logged'));
-    }
+    // Issue #3 & #6 Fix: Validate params + remove PII before navigation
+    try {
+      // Log interaction
+      if (userId) {
+        supabaseClient.from('search_history').insert({
+          user_id: userId,
+          query_filters: { goals: selectedGoals, ...filters },
+          selected_professional_id: professional.professional_id,
+        }).then(() => console.log('✅ Interaction logged'));
+      }
 
-    // Navigate to professional detail
-    navigation.navigate('ProfessionalDetail', {
-      professionalId: professional.professional_id,
-      professional,
-    });
+      // Create sanitized params (NO PII)
+      // Issue #6: Only safe, non-sensitive fields passed
+      const sanitizedParams = {
+        professionalId: professional.professional_id,
+        passedProfessional: {
+          professional_id: professional.professional_id,
+          name: professional.name,
+          description: professional.description,
+          price: professional.price,
+          rating: professional.rating,
+          review_count: professional.review_count,
+          specialties: professional.specialties,
+          mode: professional.mode,
+          distance_km: professional.distance_km,
+          match_score: professional.match_score,
+          photo_url: professional.photo_url,
+          // EXPLICITLY NOT including: email, phone, private_notes, payment_info
+        },
+      };
+
+      // Issue #3: Validate params with Zod before navigation
+      const validatedParams = createNavigationParams(
+        ProfessionalDetailParamsV1,
+        sanitizedParams,
+        'ProfessionalDetail',
+      );
+
+      console.debug('✅ Navigation params validated for ProfessionalDetail');
+
+      // Navigate after validation
+      navigation.navigate('ProfessionalDetail', validatedParams);
+    } catch (error) {
+      console.error('❌ Navigation to ProfessionalDetail failed:', error);
+      Toast.show(
+        'Navigation error. Please try again.',
+        {
+          duration: Toast.durations.SHORT,
+          backgroundColor: '#FF4444',
+          textColor: '#FFF',
+        }
+      );
+    }
   };
 
   if (loading && results.length === 0) {
